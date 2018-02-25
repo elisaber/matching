@@ -1,47 +1,3 @@
-###
-generatePlayers1 = function() {
-  #playerID
-  playerID = t(t(rep(1:nAgents, each = n)))
-  #player gender
-  gender = t(t(c(rep(0,nmen*n), rep(1,nwomen*n))))
-  #comparisons
-  compMen = t(replicate(n = nmen*n,sample((nmen+1):nAgents, 2)))
-  compWomen = t(replicate(n = nwomen*n,sample(1:nmen, 2)))
-  comparisons = rbind(compMen,compWomen)
-  data <<- cbind(playerID, gender, comparisons)
-  colnames(data) <<- c("pID", "gender", "A", "B"); data
-}
-generateElo <- function() {
-  elo1 = uM2[1,compMen[1,1]]
-  elo2 = uM2[1,compMen[1,2]]
-  elo.prob(uM2[1,compMen[1,1]],uM2[1,compMen[1,2]])
-  elo.calc(1,elo1,elo2,k=20)
-}
-generateProfiles <- function(nmen, nwomen) {
-  #generate male profiles
-  males <<- data.frame(playerID = 1:(nmen), gender = 1, height = round(rnorm(nmen,177,5)), age = round(runif(nmen,18,35)), education = round(runif(nmen,1,5)), income = round(runif(nmen,1,5)), bmi = round(runif(nmen,18.5,24.9), digits = 1))
-  males$prefHeight <- round(males$height + rnorm(1:nmen,-11.12, 6.76), digits = 2)
-  males$prefAge <- round(males$age + rnorm(1:nmen, -2.9, 5.06), digits = 2)
-  males$prefEducation <- round(males$education + rnorm(1:nmen, -0.35, 1.35), digits = 2)
-  males$prefIncome <- round(males$income + rnorm(1:nmen, -0.93, 1.28), digits = 2)
-  males
-  #generate female profiles
-  females <<- data.frame(playerID = (nmen+1):(nmen+nwomen), gender = 0, height = round(rnorm(nwomen,166,5)), age = round(runif(nwomen,18,35)), education = round(runif(nwomen,1,5)), income = round(runif(nwomen,1,5)), bmi = round(runif(nwomen,18.5,24.9), digits = 1))
-  females$prefHeight <- round(females$height + rnorm(1:nwomen, 11.37, 7.09), digits = 2)
-  females$prefAge <- round(females$age + rnorm(1:nwomen, 2.74, 5.23), digits = 2)
-  females$prefEducation <- round(females$education + rnorm(1:nwomen, 0.34, 1.40), digits = 2)
-  females$prefIncome <- round(females$income + rnorm(1:nwomen, 0.99, 1.32), digits = 2)
-  females
-}
-
-#gender: 1 -> male, - -> female
-#height: cm, normal distribution (men: 177cm, women: 166cm)
-#age: years, random distribution 18-35y
-#education: 5 bins, ascending order, random distribution
-#salary: 5 bins, ascending order, random distribution
-#bmi: random distribution 18.5-24.9 ("normal weight")
-###
-
 #load packages
 library(matchingR)
 library(ineq)
@@ -145,14 +101,42 @@ generateResults <- function() {
   wealthM <<- c(pnorm(resultsMM,mean=mn,sd=sd), pnorm(resultsWM,mean=mn,sd=sd))
   wealthM[is.na(wealthM)] <- 0
   
-  results <<- matrix(c(round(100*pnorm(min(resultsWW),mean=mn,sd=sd),digits=0), round(100*pnorm(tuWWav,mean=mn,sd=sd),digits=0), round(100*pnorm(max(resultsWW),mean=mn,sd=sd),digits=0), round(100*pnorm(min(resultsWM),mean=mn,sd=sd),digits=0), round(100*pnorm(tuWMav,mean=mn,sd=sd),digits=0), round(100*pnorm(max(resultsWM),mean=mn,sd=sd),digits=0), round(100*pnorm(min(resultsMW, na.rm = TRUE),mean=mn,sd=sd),digits=0), round(100*pnorm(tuMWav,mean=mn,sd=sd),digits=0), round(100*pnorm(max(resultsMW, na.rm = TRUE),mean=mn,sd=sd),digits=0), round(100*pnorm(min(resultsMM, na.rm = TRUE),mean=mn,sd=sd),digits=0), round(100*pnorm(tuMMav,mean=mn,sd=sd),digits=0), round(100*pnorm(max(resultsMM, na.rm = TRUE),mean=mn,sd=sd),digits=0), rep(round(100*ineq(wealthW,type="Gini"),digits=0),3), rep(round(100*ineq(wealthM,type="Gini"), digits = 0),3)), nrow = 6, ncol = 3)
-
+  results <<- matrix(c(
+    # FEMALE
+    #Minimum Value in Female-Optimal
+    round(100*pnorm(min(resultsWW),mean=mn,sd=sd),digits=0), 
+    #Average Value in Female-Optimal
+    round(100*pnorm(tuWWav,mean=mn,sd=sd),digits=0), 
+    #Maximum Value in Female-Optimal
+    round(100*pnorm(max(resultsWW),mean=mn,sd=sd),digits=0), 
+    #Minimum Value in Male-Optimal
+    round(100*pnorm(min(resultsWM),mean=mn,sd=sd),digits=0), 
+    #Average Value in Male-Optimal
+    round(100*pnorm(tuWMav,mean=mn,sd=sd),digits=0), 
+    #Maximum Value in Male-Optimal
+    round(100*pnorm(max(resultsWM),mean=mn,sd=sd),digits=0), 
+    # MALE
+    #Minimum Value in Female-Optimal
+    round(100*pnorm(min(resultsMW, na.rm = TRUE),mean=mn,sd=sd),digits=0), 
+    #Average Value in Female-Optimal
+    round(100*pnorm(tuMWav,mean=mn,sd=sd),digits=0), 
+    #Maximum Value in Female-Optimal
+    round(100*pnorm(max(resultsMW, na.rm = TRUE),mean=mn,sd=sd),digits=0), 
+    #Minimum Value in Male-Optimal
+    round(100*pnorm(min(resultsMM, na.rm = TRUE),mean=mn,sd=sd),digits=0), 
+    #Average Value in Male-Optimal
+    round(100*pnorm(tuMMav,mean=mn,sd=sd),digits=0), 
+    #Maximum Value in Male-Optimal
+    round(100*pnorm(max(resultsMM, na.rm = TRUE),mean=mn,sd=sd),digits=0), 
+    #Gini Coefficient
+    rep(round(100*ineq(wealthW,type="Gini"),digits = 0),3), 
+    rep(round(100*ineq(wealthM,type="Gini"),digits = 0),3)
+    ), nrow = 6, ncol = 3)
   rownames(results) <<- c("fo min", "fo avg", "fo max", "mo min", "mo avg", "mo max")
   colnames(results) <<- c("Match Percentil for Women", "Match Percentil for Men", "Gini Coefficient")
   results
 }
 generateResults()
-render("Model GS.R", word_document())
 
 #Lorenz curves
 plot(Lc(wealthW),col="darkred",lwd=2)
@@ -163,3 +147,6 @@ plot(Lc(wealthM),col="darkred",lwd=2)
 #hist(resultsMW)
 #hist(resultsWM)
 #hist(resultsWW)
+
+#Export code to Word
+render("Model GS.R", word_document())
