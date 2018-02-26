@@ -71,9 +71,10 @@ diag_mean=function(A,B,n,m){
     result_n = diag(A[results$proposals,1:n])
     result_m= diag(B[results$engagements,1:m])
     uwm=list(u_n= mean(result_n, na.rm=TRUE),u_m= mean(result_m, na.rm=TRUE))
-    return(uwm)
+    results=list(result_n,result_m)
+    output=list(uwm,results)
+    return(output)
   }
-
 #########################################################################################
 #Matching Function
 matching <- function(nmen, nwomen) {
