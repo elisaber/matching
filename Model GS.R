@@ -12,8 +12,8 @@ set.seed(123)
 
 #########################################################################################
 #Set Assumptions
-nmen <- 4
-nwomen <- 6
+nmen <- 6
+nwomen <- 4
 mn <- 10
 sd <- 2
 nAgents <- nmen + nwomen
@@ -45,7 +45,7 @@ generatePreferences <- function(nmen, nwomen, mn, sd, wI, wC, wH) {
   #generate homolog preferences
   hUm = matrix(rnorm(nmen*nwomen, mn, sd), nrow=nwomen, ncol=nmen)
   hUw = t(hUm)
-
+  
   MEN=generatePreferences_aux(nwomen,nmen , mn, sd, wI, wC, wH,hUm)
   WOMEN=generatePreferences_aux(nmen,nwomen , mn, sd, wI, wC, wH,hUw)
   
@@ -66,13 +66,13 @@ generatePreferences <- function(nmen, nwomen, mn, sd, wI, wC, wH) {
 
 #########################################################################################
 diag_mean=function(A,B,n,m){
-    results= galeShapley.marriageMarket(A, B) 
-    check <- galeShapley.checkStability(A,B, results$proposals, results$engagements)
-    result_n = diag(A[results$proposals,1:n])
-    result_m= diag(B[results$engagements,1:m])
-    uwm=list(u_n= mean(result_n, na.rm=TRUE),u_m= mean(result_m, na.rm=TRUE))
-    return(uwm)
-  }
+  results= galeShapley.marriageMarket(A, B) 
+  check <- galeShapley.checkStability(A,B, results$proposals, results$engagements)
+  result_n = diag(A[results$proposals,1:n])
+  result_m= diag(B[results$engagements,1:m])
+  uwm=list(u_n= mean(result_n, na.rm=TRUE),u_m= mean(result_m, na.rm=TRUE))
+  return(uwm)
+}
 
 #########################################################################################
 #Matching Function
@@ -81,7 +81,7 @@ matching <- function(nmen, nwomen) {
   GP=generatePreferences(nmen, nwomen, mn, sd, wI, wC, wH)
   uW2=GP$uW2
   uM2=GP$uM2
-
+  
   #female-optimal matching
   uwm=diag_mean(uW2,uM2,nwomen,nmen)
   tuWWav =uwm$u_n
@@ -92,9 +92,9 @@ matching <- function(nmen, nwomen) {
   tuMMav = umw$u_n
   tuWMav = umw$u_m
   output = list(tuWWav = tuWWav,
-            tuMWav = tuMWav, 
-            tuMMav = tuMMav, 
-            tuWMav = tuWMav)
+                tuMWav = tuMWav, 
+                tuMMav = tuMMav, 
+                tuWMav = tuWMav)
   return(output)
 }
 
@@ -126,36 +126,38 @@ generateResults <- function() {
   results <<- matrix(c(
     # FEMALE
     #Minimum Value in Female-Optimal
-    round(100*pnorm(min(tuWWav),mean=mn,sd=sd),digits=0), 
+    round(100*pnorm(min(tuWWav, na.rm = TRUE),mean=mn,sd=sd),digits=0), 
     #Average Value in Female-Optimal
-    round(100*pnorm(tuWWav,mean=mn,sd=sd),digits=0), 
+    round(100*pnorm(mean(tuWWav),mean=mn,sd=sd),digits=0),
     #Maximum Value in Female-Optimal
-    round(100*pnorm(max(tuWWav),mean=mn,sd=sd),digits=0), 
+    round(100*pnorm(max(tuWWav, na.rm = TRUE),mean=mn,sd=sd),digits=0), 
+    
     #Minimum Value in Male-Optimal
-    round(100*pnorm(min(tuWMav),mean=mn,sd=sd),digits=0), 
+    round(100*pnorm(min(tuWMav, na.rm = TRUE),mean=mn,sd=sd),digits=0), 
     #Average Value in Male-Optimal
-    round(100*pnorm(tuWMav,mean=mn,sd=sd),digits=0), 
+    round(100*pnorm(mean(tuWMav),mean=mn,sd=sd),digits=0),
     #Maximum Value in Male-Optimal
-    round(100*pnorm(max(tuWMav),mean=mn,sd=sd),digits=0), 
-
+    round(100*pnorm(max(tuWMav, na.rm = TRUE),mean=mn,sd=sd),digits=0), 
+    
     # MALE
     #Minimum Value in Female-Optimal
     round(100*pnorm(min(tuMWav, na.rm = TRUE),mean=mn,sd=sd),digits=0), 
     #Average Value in Female-Optimal
-    round(100*pnorm(tuMWav,mean=mn,sd=sd),digits=0), 
+    round(100*pnorm(mean(tuMWav),mean=mn,sd=sd),digits=0),
     #Maximum Value in Female-Optimal
     round(100*pnorm(max(tuMWav, na.rm = TRUE),mean=mn,sd=sd),digits=0), 
+    
     #Minimum Value in Male-Optimal
     round(100*pnorm(min(tuMMav, na.rm = TRUE),mean=mn,sd=sd),digits=0), 
     #Average Value in Male-Optimal
-    round(100*pnorm(tuMMav,mean=mn,sd=sd),digits=0), 
+    round(100*pnorm(mean(tuMMav),mean=mn,sd=sd),digits=0),
     #Maximum Value in Male-Optimal
     round(100*pnorm(max(tuMMav, na.rm = TRUE),mean=mn,sd=sd),digits=0), 
-   
+    
     #Gini Coefficient
     rep(round(100*ineq(wealthW,type="Gini"),digits = 0),3), 
     rep(round(100*ineq(wealthM,type="Gini"),digits = 0),3)), nrow = 6, ncol = 3)
-
+  
   rownames(results) <<- c("fo min", "fo avg", "fo max", "mo min", "mo avg", "mo max")
   colnames(results) <<- c("Match Percentil for Women", "Match Percentil for Men", "Gini Coefficient")
   results
