@@ -79,24 +79,30 @@ diag_mean=function(A,B,n,m){
 matching <- function(nmen, nwomen) {
   #Generate Profiles
   GP=generatePreferences(nmen, nwomen, mn, sd, wI, wC, wH)
+  
   uW2=GP$uW2
   uM2=GP$uM2
-
   #female-optimal matching
-  uwm=diag_mean(uW2,uM2,nwomen,nmen)
+  uwm=diag_mean(uW2,uM2,nwomen,nmen)[[1]]
+  resultsW=diag_mean(uW2,uM2,nwomen,nmen)[[2]]
+  
   tuWWav =uwm$u_n
   tuMWav= uwm$u_m
   
   #male-optimal matching
-  umw=diag_mean(uM2,uW2,nmen,nwomen)
+  umw=diag_mean(uM2,uW2,nmen,nwomen)[[1]]
+  resultsM=diag_mean(uW2,uM2,nwomen,nmen)[[2]]
   tuMMav = umw$u_n
   tuWMav = umw$u_m
-  output = list(tuWWav = tuWWav,
-            tuMWav = tuMWav, 
+ 
+   output=list(tuWWav =tuWWav,
+            tuMWav= tuMWav, 
             tuMMav = tuMMav, 
-            tuWMav = tuWMav)
-  return(output)
-}
+            tuWMav = tuWMav,
+            resultsW=resultsW,
+            resultsM=resultsM)
+ return(output)
+  }
 
 tuWWav =c()#<<- matrix(0,1,0)
 tuMWav =c()
@@ -105,12 +111,22 @@ tuMMav =c()
 
 #########################################################################################
 #Repeat x times
-for (i in 1:repetitions) {
-  averages = matching(nmen, nwomen)
-  tuWWav = c(tuWWav, averages$tuWWav)
-  tuMWav = c(tuMWav, averages$tuMWav)
+
+for (i in 1:repetitions)
+{
+  results=matching(nmen, nwomen)
+  averages=results[1:4]
+  resultsWW=results[[5]][[1]]
+  resultsMW=results[[5]][[2]]
+  
+  resultsWM=results[[6]][[1]]
+  resultsMM=results[[6]][[2]]
+  
+  tuWWav =c(tuWWav,averages$tuWWav)
+  tuMWav= c(tuMWav, averages$tuMWav)
   tuMMav = c(tuMMav, averages$tuMMav)
   tuWMav = c(tuWMav, averages$tuWMav)
+            
 }  
 
 #########################################################################################
