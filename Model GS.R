@@ -157,9 +157,10 @@ generateResults <- function(seed) {
                      rep(round(100*ineq(wealthW,type="Gini"),digits=0),3), 
                      rep(round(100*ineq(wealthM,type="Gini"), digits = 0),3)), nrow = 6, ncol = 3)
   
-  rownames(results) <<- c("fo min", "fo avg", "fo max", "mo min", "mo avg", "mo max")
-  colnames(results) <<- c("Match Percentil for Women", "Match Percentil for Men", "Gini Coefficient")
-  results
+  results=data.frame(results)
+  rownames(results)= c("fo min", "fo avg", "fo max", "mo min", "mo avg", "mo max")
+  names(results) = c("Match Percentil for Women", "Match Percentil for Men", "Gini Coefficient")
+  return(results)
 }
 generateResults(seed)
 
