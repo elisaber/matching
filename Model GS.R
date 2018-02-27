@@ -135,52 +135,34 @@ for (i in 1:repetitions)
 generateResults <- function(seed) {
   #Gini Coefficient female-optimal
   set.seed(seed)
-  wealthW <<- c(pnorm(tuWWav,mean=mn,sd=sd), pnorm(tuWMav,mean=mn,sd=sd))
+  wealthW <<- c(pnorm(resultsWW,mean=mn,sd=sd), pnorm(resultsMW,mean=mn,sd=sd))
   wealthW[is.na(wealthW)] <- 0
   #Gini Coefficient male-optimal
   set.seed(seed)
-  wealthM <<- c(pnorm(tuMMav,mean=mn,sd=sd), pnorm(tuWMav,mean=mn,sd=sd))
+  wealthM <<- c(pnorm(resultsMM,mean=mn,sd=sd), pnorm(resultsWM,mean=mn,sd=sd))
   wealthM[is.na(wealthM)] <- 0
   set.seed(seed)
-  results <<- matrix(c(
-    # FEMALE
-    #Minimum Value in Female-Optimal
-    round(100*pnorm(min(tuWWav),mean=mn,sd=sd),digits=0), 
-    #Average Value in Female-Optimal
-    round(100*pnorm(mean(tuWWav),mean=mn,sd=sd),digits=0), 
-    #Maximum Value in Female-Optimal
-    round(100*pnorm(max(tuWWav),mean=mn,sd=sd),digits=0), 
-    #Minimum Value in Male-Optimal
-    round(100*pnorm(min(tuWMav),mean=mn,sd=sd),digits=0), 
-    #Average Value in Male-Optimal
-    round(100*pnorm(mean(tuWMav),mean=mn,sd=sd),digits=0), 
-    #Maximum Value in Male-Optimal
-    round(100*pnorm(max(tuWMav),mean=mn,sd=sd),digits=0), 
-    
-    # MALE
-    #Minimum Value in Female-Optimal
-    round(100*pnorm(min(tuMWav, na.rm = TRUE),mean=mn,sd=sd),digits=0), 
-    #Average Value in Female-Optimal
-    round(100*pnorm(mean(tuMWav),mean=mn,sd=sd),digits=0), 
-    #Maximum Value in Female-Optimal
-    round(100*pnorm(max(tuMWav, na.rm = TRUE),mean=mn,sd=sd),digits=0), 
-    
-    #Minimum Value in Male-Optimal
-    round(100*pnorm(min(tuMMav, na.rm = TRUE),mean=mn,sd=sd),digits=0), 
-    #Average Value in Male-Optimal
-    round(100*pnorm(mean(tuMMav),mean=mn,sd=sd),digits=0), 
-    #Maximum Value in Male-Optimal
-    round(100*pnorm(max(tuMMav, na.rm = TRUE),mean=mn,sd=sd),digits=0), 
-    
-    #Gini Coefficient
-    rep(round(100*ineq(wealthW,type="Gini"),digits = 0),3), 
-    rep(round(100*ineq(wealthM,type="Gini"),digits = 0),3)), nrow = 6, ncol = 3)
+  results = matrix(c(round(100*pnorm(min(resultsWW, na.rm = TRUE),mean=mn,sd=sd),digits=0), 
+                     round(100*pnorm(mean(tuWWav),mean=mn,sd=sd),digits=0), 
+                     round(100*pnorm(max(resultsWW, na.rm = TRUE),mean=mn,sd=sd),digits=0), 
+                     round(100*pnorm(min(resultsWM, na.rm = TRUE),mean=mn,sd=sd),digits=0), 
+                     round(100*pnorm(mean(tuWMav),mean=mn,sd=sd),digits=0), 
+                     round(100*pnorm(max(resultsWM, na.rm = TRUE),mean=mn,sd=sd),digits=0), 
+                     round(100*pnorm(min(resultsMW, na.rm = TRUE),mean=mn,sd=sd),digits=0), 
+                     round(100*pnorm(mean(tuMWav),mean=mn,sd=sd),digits=0), 
+                     round(100*pnorm(max(resultsMW, na.rm = TRUE),mean=mn,sd=sd),digits=0), 
+                     round(100*pnorm(min(resultsMM, na.rm = TRUE),mean=mn,sd=sd),digits=0), 
+                     round(100*pnorm(mean(tuMMav),mean=mn,sd=sd),digits=0), 
+                     round(100*pnorm(max(resultsMM, na.rm = TRUE),mean=mn,sd=sd),digits=0), 
+                     rep(round(100*ineq(wealthW,type="Gini"),digits=0),3), 
+                     rep(round(100*ineq(wealthM,type="Gini"), digits = 0),3)), nrow = 6, ncol = 3)
   
   rownames(results) <<- c("fo min", "fo avg", "fo max", "mo min", "mo avg", "mo max")
   colnames(results) <<- c("Match Percentil for Women", "Match Percentil for Men", "Gini Coefficient")
   results
 }
 generateResults(seed)
+
 
 
 #########################################################################################
