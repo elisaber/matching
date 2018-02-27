@@ -1,4 +1,3 @@
-#########################################################################################
 #load packages
 library(matchingR)
 library(ineq)
@@ -8,8 +7,7 @@ library(rmarkdown)
 
 #########################################################################################
 #Set Seed for reproducability
-set.seed(123)
-
+seed=123
 #########################################################################################
 #Set Assumptions
 nmen <- 6
@@ -25,7 +23,8 @@ wH <- 1
 
 #########################################################################################
 #Generate Preferences Helper Function
-generatePreferences_aux<- function(NR, NC, mn, sd, wI, wC, wH,hU) {
+generatePreferences_aux<- function(NR, NC, mn, sd, wI, wC, wH,hU,seed) {
+  set.seed(seed)
   # M---NR=nwomen, NC=nmen
   # W---NR=nmen, NC=nwomen
   #generate individual cardinal preference matrices
@@ -41,13 +40,14 @@ generatePreferences_aux<- function(NR, NC, mn, sd, wI, wC, wH,hU) {
 
 #########################################################################################
 #Generate Preference Function
-generatePreferences <- function(nmen, nwomen, mn, sd, wI, wC, wH) {
+generatePreferences <- function(nmen, nwomen, mn, sd, wI, wC, wH,seed) {
+  set.seed(seed)
   #generate homolog preferences
   hUm = matrix(rnorm(nmen*nwomen, mn, sd), nrow=nwomen, ncol=nmen)
   hUw = t(hUm)
   
-  MEN=generatePreferences_aux(nwomen,nmen , mn, sd, wI, wC, wH,hUm)
-  WOMEN=generatePreferences_aux(nmen,nwomen , mn, sd, wI, wC, wH,hUw)
+  MEN=generatePreferences_aux(nwomen,nmen , mn, sd, wI, wC, wH,hUm,seed)
+  WOMEN=generatePreferences_aux(nmen,nwomen , mn, sd, wI, wC, wH,hUw,seed)
   
   #sender
   senderList = c(MEN$sender, WOMEN$sender)
@@ -64,6 +64,7 @@ generatePreferences <- function(nmen, nwomen, mn, sd, wI, wC, wH) {
   return(R)
 }
 
+
 #########################################################################################
 diag_mean=function(A,B,n,m){
   results= galeShapley.marriageMarket(A, B) 
@@ -71,30 +72,38 @@ diag_mean=function(A,B,n,m){
   result_n = diag(A[results$proposals,1:n])
   result_m= diag(B[results$engagements,1:m])
   uwm=list(u_n= mean(result_n, na.rm=TRUE),u_m= mean(result_m, na.rm=TRUE))
-  return(uwm)
+  results=list(result_n,result_m)
+  output=list(uwm,results)
+  return(output)
 }
 
 #########################################################################################
 #Matching Function
-matching <- function(nmen, nwomen) {
+matching <- function(nmen, nwomen,seed) {
   #Generate Profiles
-  GP=generatePreferences(nmen, nwomen, mn, sd, wI, wC, wH)
+  GP=generatePreferences(nmen, nwomen, mn, sd, wI, wC, wH,seed)
+  
   uW2=GP$uW2
   uM2=GP$uM2
-  
   #female-optimal matching
-  uwm=diag_mean(uW2,uM2,nwomen,nmen)
+  uwm=diag_mean(uW2,uM2,nwomen,nmen)[[1]]
+  resultsW=diag_mean(uW2,uM2,nwomen,nmen)[[2]]
+  
   tuWWav =uwm$u_n
   tuMWav= uwm$u_m
   
   #male-optimal matching
-  umw=diag_mean(uM2,uW2,nmen,nwomen)
+  umw=diag_mean(uM2,uW2,nmen,nwomen)[[1]]
+  resultsM=diag_mean(uW2,uM2,nwomen,nmen)[[2]]
   tuMMav = umw$u_n
   tuWMav = umw$u_m
-  output = list(tuWWav = tuWWav,
-                tuMWav = tuMWav, 
-                tuMMav = tuMMav, 
-                tuWMav = tuWMav)
+  
+  output=list(tuWWav =tuWWav,
+              tuMWav= tuMWav, 
+              tuMMav = tuMMav, 
+              tuWMav = tuWMav,
+              resultsW=resultsW,
+              resultsM=resultsM)
   return(output)
 }
 
@@ -105,52 +114,63 @@ tuMMav =c()
 
 #########################################################################################
 #Repeat x times
-for (i in 1:repetitions) {
-  averages = matching(nmen, nwomen)
-  tuWWav = c(tuWWav, averages$tuWWav)
-  tuMWav = c(tuMWav, averages$tuMWav)
+
+for (i in 1:repetitions)
+{
+  results=matching(nmen, nwomen,seed)
+  averages=results[1:4]
+  resultsWW=results[[5]][[1]]
+  resultsMW=results[[5]][[2]]
+  
+  resultsWM=results[[6]][[1]]
+  resultsMM=results[[6]][[2]]
+  
+  tuWWav =c(tuWWav,averages$tuWWav)
+  tuMWav= c(tuMWav, averages$tuMWav)
   tuMMav = c(tuMMav, averages$tuMMav)
   tuWMav = c(tuWMav, averages$tuWMav)
+  
 }  
 
 #########################################################################################
 #Generate results
-generateResults <- function() {
+generateResults <- function(seed) {
   #Gini Coefficient female-optimal
+  set.seed(seed)
   wealthW <<- c(pnorm(tuWWav,mean=mn,sd=sd), pnorm(tuWMav,mean=mn,sd=sd))
   wealthW[is.na(wealthW)] <- 0
   #Gini Coefficient male-optimal
+  set.seed(seed)
   wealthM <<- c(pnorm(tuMMav,mean=mn,sd=sd), pnorm(tuWMav,mean=mn,sd=sd))
   wealthM[is.na(wealthM)] <- 0
-  
+  set.seed(seed)
   results <<- matrix(c(
     # FEMALE
     #Minimum Value in Female-Optimal
-    round(100*pnorm(min(tuWWav, na.rm = TRUE),mean=mn,sd=sd),digits=0), 
+    round(100*pnorm(min(tuWWav),mean=mn,sd=sd),digits=0), 
     #Average Value in Female-Optimal
-    round(100*pnorm(mean(tuWWav),mean=mn,sd=sd),digits=0),
+    round(100*pnorm(mean(tuWWav),mean=mn,sd=sd),digits=0), 
     #Maximum Value in Female-Optimal
-    round(100*pnorm(max(tuWWav, na.rm = TRUE),mean=mn,sd=sd),digits=0), 
-    
+    round(100*pnorm(max(tuWWav),mean=mn,sd=sd),digits=0), 
     #Minimum Value in Male-Optimal
-    round(100*pnorm(min(tuWMav, na.rm = TRUE),mean=mn,sd=sd),digits=0), 
+    round(100*pnorm(min(tuWMav),mean=mn,sd=sd),digits=0), 
     #Average Value in Male-Optimal
-    round(100*pnorm(mean(tuWMav),mean=mn,sd=sd),digits=0),
+    round(100*pnorm(mean(tuWMav),mean=mn,sd=sd),digits=0), 
     #Maximum Value in Male-Optimal
-    round(100*pnorm(max(tuWMav, na.rm = TRUE),mean=mn,sd=sd),digits=0), 
+    round(100*pnorm(max(tuWMav),mean=mn,sd=sd),digits=0), 
     
     # MALE
     #Minimum Value in Female-Optimal
     round(100*pnorm(min(tuMWav, na.rm = TRUE),mean=mn,sd=sd),digits=0), 
     #Average Value in Female-Optimal
-    round(100*pnorm(mean(tuMWav),mean=mn,sd=sd),digits=0),
+    round(100*pnorm(mean(tuMWav),mean=mn,sd=sd),digits=0), 
     #Maximum Value in Female-Optimal
     round(100*pnorm(max(tuMWav, na.rm = TRUE),mean=mn,sd=sd),digits=0), 
     
     #Minimum Value in Male-Optimal
     round(100*pnorm(min(tuMMav, na.rm = TRUE),mean=mn,sd=sd),digits=0), 
     #Average Value in Male-Optimal
-    round(100*pnorm(mean(tuMMav),mean=mn,sd=sd),digits=0),
+    round(100*pnorm(mean(tuMMav),mean=mn,sd=sd),digits=0), 
     #Maximum Value in Male-Optimal
     round(100*pnorm(max(tuMMav, na.rm = TRUE),mean=mn,sd=sd),digits=0), 
     
@@ -162,7 +182,8 @@ generateResults <- function() {
   colnames(results) <<- c("Match Percentil for Women", "Match Percentil for Men", "Gini Coefficient")
   results
 }
-generateResults()
+
+generateResults(seed)
 
 #########################################################################################
 # Display Graphs
