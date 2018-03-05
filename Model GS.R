@@ -1,56 +1,50 @@
-#########################################################################################
-#load packages
+###
+#load packages (assumed they are already installed)
 library(matchingR)
 library(ineq)
 library(rmarkdown)
-#?rmarkdown
-#library(ggplot2)
 
-#########################################################################################
-#Set Seed for reproducability
-set.seed(123)
-
-#########################################################################################
-#Set Assumptions
-nmen <- 6
-nwomen <- 4
-mn <- 10
-sd <- 2
-nAgents <- nmen + nwomen
-repetitions <- 1
+###Assumptions, to be set by researcher
+#Network size
+nmen <- 600
+nwomen <- 400
+#Preferences
 wI <- 1
 wC <- 1
 wH <- 1
+#Nr of experiments
+repetitions <- 200
 
+#Automatically set parameters
+seed = 1
+seedMin=seed
+seedMax=seed+repetitions
+R=matrix(0,6,3)
+mn <- 1000
+sd <- 200
 
-#########################################################################################
-#Generate Preferences Helper Function
-generatePreferences_aux<- function(NR, NC, mn, sd, wI, wC, wH,hU) {
-  # M---NR=nwomen, NC=nmen
-  # W---NR=nmen, NC=nwomen
-  #generate individual cardinal preference matrices
-  iU=matrix(rnorm(NR*NC, mn, sd), nrow=NR, ncol=NC) 
-  #Calculate attractiveness score of each agent
-  A=rowMeans(iU)
-  #Calculate preferences stated by each agent
-  output=list(
-    u2=(wI*iU + wC*A + wH*hU)/(wI+wC+wH),
-    sender=matrix(rep(1:NC, each = NR)))
-  return(output)  
-}
-
-#########################################################################################
-#Generate Preference Function
+###Define preferences
 generatePreferences <- function(nmen, nwomen, mn, sd, wI, wC, wH) {
-  #generate homolog preferences
-  hUm = matrix(rnorm(nmen*nwomen, mn, sd), nrow=nwomen, ncol=nmen)
-  hUw = t(hUm)
+  #generate individual cardinal preference matrices
+  iUm <- matrix(rnorm(nmen*nwomen, mn, sd), nrow=nwomen, ncol=nmen) #independent pref. by men for women
+  iUw <- matrix(rnorm(nwomen*nmen, mn, sd), nrow=nmen, ncol=nwomen) #independent pref. by women for men
   
-  MEN=generatePreferences_aux(nwomen,nmen , mn, sd, wI, wC, wH,hUm)
-  WOMEN=generatePreferences_aux(nmen,nwomen , mn, sd, wI, wC, wH,hUw)
+  #Calculate attractiveness score of each agent
+  Aw <- rowMeans(iUm) #average rating for each woman
+  Am <- rowMeans(iUw) #average rating for each man
+  
+  #generate homolog preferences
+  hUm <- matrix(rnorm(nmen*nwomen, mn, sd), nrow=nwomen, ncol=nmen) #homolog pref. by men for women
+  hUw <- t(hUm) #homolog pref. by women for men (like each other exactly the same)
+  
+  #Calculate preferences stated by each agent
+  uM <<- (wI*iUm + wC*Aw + wH*hUm)/(wI+wC+wH) #weighted pref. by men for women
+  uW <<- (wI*iUw + wC*Am + wH*hUw)/(wI+wC+wH) #weighted pref. by women for men
   
   #sender
-  senderList = c(MEN$sender, WOMEN$sender)
+  senderMen = t(t(rep(1:nmen, each = nwomen)))
+  senderWomen = t(t(rep(1:nwomen, each = nmen)))
+  senderList = c(senderMen, senderWomen)
   
   #receiver
   receiverWomen = rep(1:nmen, times = nwomen)
@@ -58,115 +52,66 @@ generatePreferences <- function(nmen, nwomen, mn, sd, wI, wC, wH) {
   receiverList = c(receiverWomen, receiverMen)
   
   #preferences
-  preferenceList <- c(MEN$u2, WOMEN$u2)
-  preferences=data.frame(swiperID=senderList,targetID=receiverList,utility=preferenceList)
-  R=list(uW2=WOMEN$u2,uM2=MEN$u2,Preferences=preferences)
-  return(R)
+  preferenceList <- c(as.list(uM), as.list(uW))
+  preferences = data.frame(cbind(senderList,receiverList,preferenceList))
+  names(preferences) = c("swiperID", "targetID", "utility")
+  return(preferences)
 }
 
-#########################################################################################
-diag_mean=function(A,B,n,m){
-  results= galeShapley.marriageMarket(A, B) 
-  check <- galeShapley.checkStability(A,B, results$proposals, results$engagements)
-  result_n = diag(A[results$proposals,1:n])
-  result_m= diag(B[results$engagements,1:m])
-  uwm=list(u_n= mean(result_n, na.rm=TRUE),u_m= mean(result_m, na.rm=TRUE))
-  return(uwm)
-}
+### 1x Experiment = "create two-sided network with preferences, match up in pairs, examine results"
+### Run and repeat experiment x times, each time with new random preferences
+for (i in seedMin:seedMax){
+  #set seed
+  set.seed(i)
 
-#########################################################################################
-#Matching Function
-matching <- function(nmen, nwomen) {
   #Generate Profiles
-  GP=generatePreferences(nmen, nwomen, mn, sd, wI, wC, wH)
-  uW2=GP$uW2
-  uM2=GP$uM2
+  preferences=generatePreferences(nmen, nwomen, mn, sd, wI, wC, wH)
   
   #female-optimal matching
-  uwm=diag_mean(uW2,uM2,nwomen,nmen)
-  tuWWav =uwm$u_n
-  tuMWav= uwm$u_m
+  resultsW <<- galeShapley.marriageMarket(uW, uM) 
+  galeShapley.checkStability(uW, uM, resultsW$proposals, resultsW$engagements)
+  #calculate average utility of each matched agent
+  resultsWW <<- diag(uW[resultsW$proposals,1:nwomen])
+  uWWav <<- mean(resultsWW, na.rm=TRUE)
+  resultsMW <<- diag(uM[resultsW$engagements,1:nmen])
+  uMWav <<- mean(resultsMW, na.rm=TRUE)
   
   #male-optimal matching
-  umw=diag_mean(uM2,uW2,nmen,nwomen)
-  tuMMav = umw$u_n
-  tuWMav = umw$u_m
-  output = list(tuWWav = tuWWav,
-                tuMWav = tuMWav, 
-                tuMMav = tuMMav, 
-                tuWMav = tuWMav)
-  return(output)
-}
-
-tuWWav =c()#<<- matrix(0,1,0)
-tuMWav =c()
-tuWMav =c()
-tuMMav =c()
-
-#########################################################################################
-#Repeat x times
-for (i in 1:repetitions) {
-  averages = matching(nmen, nwomen)
-  tuWWav = c(tuWWav, averages$tuWWav)
-  tuMWav = c(tuMWav, averages$tuMWav)
-  tuMMav = c(tuMMav, averages$tuMMav)
-  tuWMav = c(tuWMav, averages$tuWMav)
-}  
-
-#########################################################################################
-#Generate results
-generateResults <- function() {
+  resultsM <- galeShapley.marriageMarket(uM, uW) 
+  check <- galeShapley.checkStability(uM, uW, resultsM$proposals, resultsM$engagements)
+  #calculate average utility of each matched agent
+  resultsWM <<- diag(uW[resultsM$engagements,1:nwomen])
+  uWMav <<- mean(resultsWM, na.rm=TRUE)
+  resultsMM <<- diag(uM[resultsM$proposals,1:nmen])
+  uMMav <<- mean(resultsMM, na.rm=TRUE)
+  
+  #Create results
   #Gini Coefficient female-optimal
-  wealthW <<- c(pnorm(tuWWav,mean=mn,sd=sd), pnorm(tuWMav,mean=mn,sd=sd))
+  wealthW = c(pnorm(resultsWW,mean=mn,sd=sd), pnorm(resultsMW,mean=mn,sd=sd))
   wealthW[is.na(wealthW)] <- 0
   #Gini Coefficient male-optimal
-  wealthM <<- c(pnorm(tuMMav,mean=mn,sd=sd), pnorm(tuWMav,mean=mn,sd=sd))
+  wealthM = c(pnorm(resultsMM,mean=mn,sd=sd), pnorm(resultsWM,mean=mn,sd=sd))
   wealthM[is.na(wealthM)] <- 0
   
-  results <<- matrix(c(
-    # FEMALE
-    #Minimum Value in Female-Optimal
-    round(100*pnorm(min(tuWWav, na.rm = TRUE),mean=mn,sd=sd),digits=0), 
-    #Average Value in Female-Optimal
-    round(100*pnorm(mean(tuWWav),mean=mn,sd=sd),digits=0),
-    #Maximum Value in Female-Optimal
-    round(100*pnorm(max(tuWWav, na.rm = TRUE),mean=mn,sd=sd),digits=0), 
-    
-    #Minimum Value in Male-Optimal
-    round(100*pnorm(min(tuWMav, na.rm = TRUE),mean=mn,sd=sd),digits=0), 
-    #Average Value in Male-Optimal
-    round(100*pnorm(mean(tuWMav),mean=mn,sd=sd),digits=0),
-    #Maximum Value in Male-Optimal
-    round(100*pnorm(max(tuWMav, na.rm = TRUE),mean=mn,sd=sd),digits=0), 
-    
-    # MALE
-    #Minimum Value in Female-Optimal
-    round(100*pnorm(min(tuMWav, na.rm = TRUE),mean=mn,sd=sd),digits=0), 
-    #Average Value in Female-Optimal
-    round(100*pnorm(mean(tuMWav),mean=mn,sd=sd),digits=0),
-    #Maximum Value in Female-Optimal
-    round(100*pnorm(max(tuMWav, na.rm = TRUE),mean=mn,sd=sd),digits=0), 
-    
-    #Minimum Value in Male-Optimal
-    round(100*pnorm(min(tuMMav, na.rm = TRUE),mean=mn,sd=sd),digits=0), 
-    #Average Value in Male-Optimal
-    round(100*pnorm(mean(tuMMav),mean=mn,sd=sd),digits=0),
-    #Maximum Value in Male-Optimal
-    round(100*pnorm(max(tuMMav, na.rm = TRUE),mean=mn,sd=sd),digits=0), 
-    
-    #Gini Coefficient
-    rep(round(100*ineq(wealthW,type="Gini"),digits = 0),3), 
-    rep(round(100*ineq(wealthM,type="Gini"),digits = 0),3)), nrow = 6, ncol = 3)
-  
-  rownames(results) <<- c("fo min", "fo avg", "fo max", "mo min", "mo avg", "mo max")
-  colnames(results) <<- c("Match Percentil for Women", "Match Percentil for Men", "Gini Coefficient")
-  results
+  #Define result matrix
+  #resultsUtility = matrix(c(min(resultsWW, na.rm = TRUE), uWWav, max(resultsWW, na.rm = TRUE), min(resultsWM, na.rm = TRUE), uWMav, max(resultsWM, na.rm = TRUE), min(resultsMW, na.rm = TRUE), uMWav, max(resultsMW, na.rm = TRUE), min(resultsMM, na.rm = TRUE), uMMav, max(resultsMM, na.rm = TRUE), rep(round(100*ineq(wealthW,type="Gini"),digits=0),3), rep(round(100*ineq(wealthM,type="Gini"), digits = 0),3)), nrow = 6, ncol = 3)
+  resultsPercentile = matrix(c(pnorm(min(resultsWW, na.rm = TRUE),mean=mn,sd=sd), pnorm(uWWav,mean=mn,sd=sd), pnorm(max(resultsWW, na.rm = TRUE),mean=mn,sd=sd), pnorm(min(resultsWM, na.rm = TRUE),mean=mn,sd=sd), pnorm(uWMav,mean=mn,sd=sd), pnorm(max(resultsWM, na.rm = TRUE),mean=mn,sd=sd), pnorm(min(resultsMW, na.rm = TRUE),mean=mn,sd=sd), pnorm(uMWav,mean=mn,sd=sd), pnorm(max(resultsMW, na.rm = TRUE),mean=mn,sd=sd), pnorm(min(resultsMM, na.rm = TRUE),mean=mn,sd=sd), pnorm(uMMav,mean=mn,sd=sd), pnorm(max(resultsMM, na.rm = TRUE),mean=mn,sd=sd), rep(ineq(wealthW,type="Gini"),3), rep(ineq(wealthM,type="Gini"),3)), nrow = 6, ncol = 3)
+  rownames(resultsPercentile) = c("fo min", "fo avg", "fo max", "mo min", "mo avg", "mo max")
+  colnames(resultsPercentile) = c("Match Percentil for Women", "Match Percentil for Men", "Gini Coefficient")
+
+  #Print results
+  print(i)
+  print(resultsPercentile)
+  R=R+resultsPercentile
 }
-generateResults()
 
-#########################################################################################
-# Display Graphs
+#Average Value after x repititions
+AVERAGE=R/(repetitions+1)
+AVERAGE
 
-#########################################################################################
-#Output Code to Word
-#render("Model GS.R", word_document())
+### Visualization (Lorenz curves)
+# plot(Lc(wealthW),col="darkred",lwd=2)
+# plot(Lc(wealthM),col="darkred",lwd=2)
+
+### Export to MS Word
+# render("Model GS.R", word_document())
