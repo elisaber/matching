@@ -3,7 +3,7 @@
 library(matchingR)
 library(ineq)
 library(rmarkdown)
-
+library(ggplot2)
 ###Assumptions, to be set by researcher
 #Network size
 nmen <- 600
@@ -19,7 +19,11 @@ repetitions <- 200
 seed = 1
 seedMin=seed
 seedMax=seed+repetitions
-R=matrix(0,6,3)
+RLIST=list() #SAVE ALL THE MATRIX ON A LIST TO CALCULTE AT THE END SOME VALUES LIKE MEAN, SD,..
+fo_avg_W=c()
+mo_avg_W=c()
+fo_avg_M=c()
+mo_avg_M=c()
 mn <- 1000
 sd <- 200
 
@@ -63,7 +67,7 @@ generatePreferences <- function(nmen, nwomen, mn, sd, wI, wC, wH) {
 for (i in seedMin:seedMax){
   #set seed
   set.seed(i)
-
+  
   #Generate Profiles
   preferences=generatePreferences(nmen, nwomen, mn, sd, wI, wC, wH)
   
@@ -98,16 +102,42 @@ for (i in seedMin:seedMax){
   resultsPercentile = matrix(c(pnorm(min(resultsWW, na.rm = TRUE),mean=mn,sd=sd), pnorm(uWWav,mean=mn,sd=sd), pnorm(max(resultsWW, na.rm = TRUE),mean=mn,sd=sd), pnorm(min(resultsWM, na.rm = TRUE),mean=mn,sd=sd), pnorm(uWMav,mean=mn,sd=sd), pnorm(max(resultsWM, na.rm = TRUE),mean=mn,sd=sd), pnorm(min(resultsMW, na.rm = TRUE),mean=mn,sd=sd), pnorm(uMWav,mean=mn,sd=sd), pnorm(max(resultsMW, na.rm = TRUE),mean=mn,sd=sd), pnorm(min(resultsMM, na.rm = TRUE),mean=mn,sd=sd), pnorm(uMMav,mean=mn,sd=sd), pnorm(max(resultsMM, na.rm = TRUE),mean=mn,sd=sd), rep(ineq(wealthW,type="Gini"),3), rep(ineq(wealthM,type="Gini"),3)), nrow = 6, ncol = 3)
   rownames(resultsPercentile) = c("fo min", "fo avg", "fo max", "mo min", "mo avg", "mo max")
   colnames(resultsPercentile) = c("Match Percentil for Women", "Match Percentil for Men", "Gini Coefficient")
-
+  
   #Print results
   print(i)
-  print(resultsPercentile)
-  R=R+resultsPercentile
+  #print(resultsPercentile)
+  fo_avg_W=c(fo_avg_W,resultsPercentile[2,1])
+  fo_avg_M=c(fo_avg_M,resultsPercentile[2,2])
+  
+  mo_avg_W=c(mo_avg_W,resultsPercentile[5,1])
+  mo_avg_M=c(mo_avg_M,resultsPercentile[5,2])
+  RLIST[[i]]=resultsPercentile
+  
 }
 
 #Average Value after x repititions
-AVERAGE=R/(repetitions+1)
+arr=array(unlist(RLIST),c(6,3,repetitions+1))
+
+AVERAGE=apply(arr , 1:2 , mean )
+row.names(AVERAGE)=row.names(resultsPercentile)
+colnames(AVERAGE)=colnames(resultsPercentile)
 AVERAGE
+
+SD=apply(arr , 1:2 , sd)
+row.names(SD)=row.names(resultsPercentile)
+colnames(SD)=colnames(resultsPercentile)
+SD
+
+
+#TOPLOT
+DF=data.frame(avg=c(fo_avg_W,fo_avg_M,mo_avg_W,mo_avg_M),
+              fo_mo=c(rep("fo",22*(repetitions+1)),rep("mo",2*(repetitions+1))),
+              sex=c(rep("female-optimal",repetitions+1),
+                    rep("male-optimal",repetitions+1),rep("female-optimal",repetitions+1),rep("male-optimal",repetitions+1)))
+
+ggplot(DF, aes(x =sex, y = avg,fill=fo_mo)) +stat_boxplot(geom ='errorbar') +   geom_boxplot()
+
+
 
 ### Visualization (Lorenz curves)
 # plot(Lc(wealthW),col="darkred",lwd=2)
