@@ -10,9 +10,9 @@ library(ggplot2)
 nmen <- 5
 nwomen <- 5
 #Preferences
-prefIndependent <- 1
+prefIndependent <- 0
 prefCollective <- 1
-prefHomolog <- 1
+prefHomolog <- 0
 #Nr of experiments
 repetitions <- 200
 
@@ -160,6 +160,7 @@ ggplot(data = DF, mapping = aes(x= sex, y = avg, fill = sex)) +
   #scale_fill_grey() + theme_classic() + #BW version
   ggtitle(paste("Average Utility by Gender"), subtitle = (paste("n = ", setSize, "\nmen/women (in %) = ", nmen/setSize*100, ":", nwomen/setSize*100, "\nPreference structure individual/collective/homolog (in %) = ", round(wI*100), "/", round(wC * 100), "/", round(wH * 100), sep = ""))) + #add title
   theme(plot.title = element_text(face="bold", size=16, hjust=0)) + #format title
+  ylim(low=0, high=1) +
   theme(legend.position="none") #remove legend
 
 ### Export to MS Word
