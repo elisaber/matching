@@ -4,15 +4,16 @@ library(matchingR)
 library(ineq)
 library(rmarkdown)
 library(ggplot2)
+library(dplyr)
 
 ###Assumptions, to be set by researcher
 #Network size
-nmen <- 5
-nwomen <- 5
+nmen <- 50
+nwomen <- 50
 #Preferences
-prefIndependent <- 0
+prefIndependent <- 1
 prefCollective <- 1
-prefHomolog <- 0
+prefHomolog <- 1
 #Nr of experiments
 repetitions <- 200
 
@@ -151,16 +152,18 @@ data_summary <- function(x) {
   return(c(y=m,ymin=ymin,ymax=ymax))
 }
 
+#filter(DF, algorithm == "male-optimal")
+
 ggplot(data = DF, mapping = aes(x= sex, y = avg, fill = sex)) + 
-  geom_violin() + 
-  stat_summary(fun.data=data_summary) +
+  geom_violin(alpha = .5) + #make half-transparent
+  stat_summary(fun.data=data_summary) + #add average of averages
   facet_wrap(~ algorithm) + #wrap both algorithm variants in one graph
   xlab("") + ylab("Percentile") + #Add axis
   scale_fill_manual(values=c("#2595FF", "#FE18AC")) + #coloured version
   #scale_fill_grey() + theme_classic() + #BW version
-  ggtitle(paste("Average Utility by Gender"), subtitle = (paste("n = ", setSize, "\nmen/women (in %) = ", nmen/setSize*100, ":", nwomen/setSize*100, "\nPreference structure individual/collective/homolog (in %) = ", round(wI*100), "/", round(wC * 100), "/", round(wH * 100), sep = ""))) + #add title
+  ggtitle(paste("Average Utility by Gender"), subtitle = (paste("n = ", setSize," || men/women (in %) = ", nmen/setSize*100, ":", nwomen/setSize*100, " || nr. of experiments: ", repetitions, "\nPreference structure individual/collective/homolog (in %) = ", round(wI*100), "/", round(wC * 100), "/", round(wH * 100), sep = ""))) + #add title
   theme(plot.title = element_text(face="bold", size=16, hjust=0)) + #format title
-  ylim(low=0, high=1) +
+  ylim(low=0, high=1) + #fix y limit to 0, 1 for better comparability
   theme(legend.position="none") #remove legend
 
 ### Export to MS Word
