@@ -4,14 +4,15 @@ library(matchingR)
 library(ineq)
 library(rmarkdown)
 library(ggplot2)
+
 ###Assumptions, to be set by researcher
 #Network size
-nmen <- 600
-nwomen <- 400
+nmen <- 5
+nwomen <- 5
 #Preferences
-wI <- 1
-wC <- 1
-wH <- 1
+prefIndependent <- 1
+prefCollective <- 1
+prefHomolog <- 1
 #Nr of experiments
 repetitions <- 200
 
@@ -19,6 +20,11 @@ repetitions <- 200
 seed = 1
 seedMin=seed
 seedMax=seed+repetitions
+setSize=nmen+nwomen
+sumPref=prefIndependent+prefCollective+prefHomolog
+wI=prefIndependent/sumPref
+wC=prefCollective/sumPref
+wH=prefHomolog/sumPref
 RLIST=list() #SAVE ALL THE MATRIX ON A LIST TO CALCULTE AT THE END SOME VALUES LIKE MEAN, SD,..
 fo_avg_W=c()
 mo_avg_W=c()
@@ -42,8 +48,8 @@ generatePreferences <- function(nmen, nwomen, mn, sd, wI, wC, wH) {
   hUw <- t(hUm) #homolog pref. by women for men (like each other exactly the same)
   
   #Calculate preferences stated by each agent
-  uM <<- (wI*iUm + wC*Aw + wH*hUm)/(wI+wC+wH) #weighted pref. by men for women
-  uW <<- (wI*iUw + wC*Am + wH*hUw)/(wI+wC+wH) #weighted pref. by women for men
+  uM <<- (wI*iUm + wC*Aw + wH*hUm) #weighted pref. by men for women
+  uW <<- (wI*iUw + wC*Am + wH*hUw) #weighted pref. by women for men
   
   #sender
   senderMen = t(t(rep(1:nmen, each = nwomen)))
@@ -131,17 +137,30 @@ SD
 
 #TOPLOT
 DF=data.frame(avg=c(fo_avg_W,fo_avg_M,mo_avg_W,mo_avg_M),
-              fo_mo=c(rep("fo",22*(repetitions+1)),rep("mo",2*(repetitions+1))),
-              sex=c(rep("female-optimal",repetitions+1),
-                    rep("male-optimal",repetitions+1),rep("female-optimal",repetitions+1),rep("male-optimal",repetitions+1)))
+              algorithm=c(rep("female-optimal",6*(repetitions+1)),rep("male-optimal",6*(repetitions+1))),
+              sex=c(rep("women",repetitions+1),
+                    rep("men",repetitions+1),rep("women",repetitions+1),rep("men",repetitions+1)))
 
-ggplot(DF, aes(x =sex, y = avg,fill=fo_mo)) +stat_boxplot(geom ='errorbar') +   geom_boxplot()
+#ggplot(data = DF, mapping = aes(x = algorithm, y = avg,fill=sex)) + stat_boxplot(geom ='errorbar') + geom_boxplot()
 
+#Construct 2 violin graphs
+data_summary <- function(x) {
+  m <- mean(x)
+  ymin <- m-sd(x)
+  ymax <- m+sd(x)
+  return(c(y=m,ymin=ymin,ymax=ymax))
+}
 
-
-### Visualization (Lorenz curves)
-# plot(Lc(wealthW),col="darkred",lwd=2)
-# plot(Lc(wealthM),col="darkred",lwd=2)
+ggplot(data = DF, mapping = aes(x= sex, y = avg, fill = sex)) + 
+  geom_violin() + 
+  stat_summary(fun.data=data_summary) +
+  facet_wrap(~ algorithm) + #wrap both algorithm variants in one graph
+  xlab("") + ylab("Percentile") + #Add axis
+  scale_fill_manual(values=c("#2595FF", "#FE18AC")) + #coloured version
+  #scale_fill_grey() + theme_classic() + #BW version
+  ggtitle(paste("Average Utility by Gender"), subtitle = (paste("n = ", setSize, "\nmen/women (in %) = ", nmen/setSize*100, ":", nwomen/setSize*100, "\nPreference structure individual/collective/homolog (in %) = ", round(wI*100), "/", round(wC * 100), "/", round(wH * 100), sep = ""))) + #add title
+  theme(plot.title = element_text(face="bold", size=16, hjust=0)) + #format title
+  theme(legend.position="none") #remove legend
 
 ### Export to MS Word
 # render("Model GS.R", word_document())
