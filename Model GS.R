@@ -8,8 +8,8 @@ library(dplyr)
 
 ###Assumptions, to be set by researcher
 #Network size
-nmen <- 50
-nwomen <- 50
+nmen <- 500
+nwomen <- 500
 #Preferences
 prefIndependent <- 1
 prefCollective <- 1
@@ -152,12 +152,11 @@ data_summary <- function(x) {
   return(c(y=m,ymin=ymin,ymax=ymax))
 }
 
-#filter(DF, algorithm == "male-optimal")
-
 ggplot(data = DF, mapping = aes(x= sex, y = avg, fill = sex)) + 
-  geom_violin(alpha = .5) + #make half-transparent
+  geom_violin(data = filter(DF, algorithm == "male-optimal"), alpha = .5) + #filter for male-optimal version of the algorithm
+  geom_violin(data = filter(DF, algorithm == "female-optimal"), alpha = .5) + #filter for female-optimal version of the algorithm
+  #facet_wrap(~ algorithm) + #wrap both algorithm variants in one graph
   stat_summary(fun.data=data_summary) + #add average of averages
-  facet_wrap(~ algorithm) + #wrap both algorithm variants in one graph
   xlab("") + ylab("Percentile") + #Add axis
   scale_fill_manual(values=c("#2595FF", "#FE18AC")) + #coloured version
   #scale_fill_grey() + theme_classic() + #BW version
