@@ -33,7 +33,7 @@ prefCollective <- 1 #weight of collective/correlated preferences
 prefHomolog <- 1 #weight of homolog/intercorrelated preferences
 repetitions <- 199 #how many times the experiment is repeated with new set of random preferences
 mn <- 5.5 #average preference
-sd <- 1.1 #standard deviation
+sd <- 1.25 #standard deviation
 ```
 
 ### Automatically set parameters
