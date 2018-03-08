@@ -169,8 +169,8 @@ ggplot(data = DF, mapping = aes(x= sex, y = avg, fill = sex)) +
 #Desnity Chart (Across all iterations, how was utility distribution for each gender?)
 ggplot(data = DF, aes(x = avg)) + 
   geom_density(data = filter(DF, algorithm == "female-optimal" & sex == "men"), fill = "#2595FF", color = NA, alpha = 0.3) +
-  #geom_density(data = filter(DF, algorithm == "male-optimal" & sex == "men"), fill = "#2595FF", color = NA, alpha = 0.1) +
-  geom_density(data = filter(DF, algorithm == "female-optimal" & sex == "women"), fill = "#FE18AC", color = NA, alpha = 0.1) +
+  geom_density(data = filter(DF, algorithm == "male-optimal" & sex == "men"), fill = "#2595FF", color = NA, alpha = 0.1) +
+  #geom_density(data = filter(DF, algorithm == "female-optimal" & sex == "women"), fill = "#FE18AC", color = NA, alpha = 0.1) +
   #geom_density(data = filter(DF, algorithm == "male-optimal" & sex == "women"), fill = "#FE18AC", color = NA, alpha = 0.1) +
   xlab("Percentile per Agent") + ylab("Frequency") + #Add axis
   labs(title = paste("Utility Distribution per Matching")) +
