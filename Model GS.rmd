@@ -54,7 +54,7 @@ fo_avg_M=c()
 mo_avg_M=c()
 ```
 
-### Define Function that generates preferences
+### Defining Function to generate all preferences in one iteration
 Each agent has independent, correlated or intercorrelated preferences for each agent of the other gender. The mix of these has been defined by the researcher in above code chunk. This model works with cardinal preferences, which allows not only to see who is preferred, but also by how much
 ```{r, message = FALSE, warning = FALSE}
 generatePreferences <- function(nmen, nwomen, mn, sd, wI, wC, wH) {
