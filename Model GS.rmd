@@ -3,14 +3,18 @@ output: word_document
 ---
 Github repository: <https://github.com/bredowmax/matching>
 
-### Load packages
-Install packages if not done already
+### Load & optionally install required packages
+- matchingR: Runs DAA and solves the Stable Marriage Problem by matching up agents in stable pairs
+- dplyr:  Allows quick filtering in large datasets
+- ggplot2: Renders graphs with a professional look
+- rmarkdown: Export R code to Word
+- ineq: Package that allows to display inequality
 ```{r, message = FALSE, warning = FALSE}
-library(matchingR) #Package that matches up agents in stable pairs
-library(ineq) #Package that allows to display inequality (currently not used)
-library(rmarkdown) #Package that allows to export R code to Word
-library(ggplot2) #Package for rendering graphs
-library(dplyr) #Package to allow quick filtering
+requiredPackages = c("matchingR", "dplyr", "ggplot2", "rmarkdown", "ineq")
+for(p in requiredPackages){
+  if(!require(p,character.only = TRUE)) install.packages(p)
+  library(p,character.only = TRUE)
+}
 ```
 
 ### Assumptions to be set by researcher
