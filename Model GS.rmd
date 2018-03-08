@@ -14,25 +14,28 @@ library(dplyr) #Package to allow quick filtering
 ```
 
 ### Assumptions to be set by researcher
-Sets network size, gender distribution, preference structure, experiment iterations and random distribution variables
+Sets network size, gender distribution, preference structure, experiment iterations and random distribution variables. Preference structures are defined as follows:
+
+- *independent/subjective*: Each preference is generated randomly and has no correlation to any other preference. It can be phrased as: "Beauty lies in the eyes of the beholder"
+
+- *correlated/objective/horizontal*: Perfectly correlated preferences indicate that all agents agree on a score. In this model, correlated preferenced are created through the average of all individually created preferences. A real life example is a unanimously valid beauty standard
+
+- *intercorrelated/homolog/vertical*: Certain characteristics attract agents to each other, for example a low distance, a preferable age/height/height constellation, or common interests
 ```{r, message = FALSE, warning = FALSE}
-#Network size
-nmen <- 50
-nwomen <- 50
-#Preferences
-prefIndependent <- 1
-prefCollective <- 1
-prefHomolog <- 1
-#Repetitions of experiments
-repetitions <- 199
-#Variables for random distribution
-mn <- 1000
-sd <- 200
+nmen <- 50 #number of men
+nwomen <- 50 #number of women
+prefIndependent <- 1 #weight of subjective/independent preferences
+prefCollective <- 1 #weight of collective/correlated preferences
+prefHomolog <- 1 #weight of homolog/intercorrelated preferences
+repetitions <- 199 #how many times the experiment is repeated with new set of random preferences
+mn <- 1000 #average preference
+sd <- 200 #standard deviation
 ```
 
 ### Automatically set parameters
+Only change if you know what you are doing
 ```{r, message = FALSE, warning = FALSE}
-seed = 1
+seed = 1 #sets seed for reproducability
 seedMin=seed
 seedMax=seed+repetitions
 setSize=nmen+nwomen
@@ -48,13 +51,7 @@ mo_avg_M=c()
 ```
 
 ### Define Function that generates preferences
-Each agent has independent, correlated or intercorrelated preferences for each agent of the other gender. The mix of these has been defined by the researcher in above code chunk. This model works with cardinal preferences, which allows not only to see who is preferred, but also by how much.
-
-- independent/subjective: Each preference is generated randomly and has no correlation to any other preference. It can be phrased as: "Beauty lies in the eyes of the beholder"
-
-- correlated/objective/horizontal: Perfectly correlated preferences indicate that all agents agree on a score. In this model, correlated preferenced are created through the average of all individually created preferences. A real life example is a unanimously valid beauty standard
-
-- intercorrelated/homolog/vertical: Certain characteristics attract agents to each other, for example a low distance, a preferable age/height/height constellation, or common interests
+Each agent has independent, correlated or intercorrelated preferences for each agent of the other gender. The mix of these has been defined by the researcher in above code chunk. This model works with cardinal preferences, which allows not only to see who is preferred, but also by how much
 ```{r, message = FALSE, warning = FALSE}
 generatePreferences <- function(nmen, nwomen, mn, sd, wI, wC, wH) {
   #generate individual cardinal preference matrices
