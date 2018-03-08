@@ -1,12 +1,21 @@
-###
-#load packages (assumed they are already installed)
-library(matchingR)
-library(ineq)
-library(rmarkdown)
-library(ggplot2)
-library(dplyr)
+---
+output: word_document
+---
+Github repository: <https://github.com/bredowmax/matching>
 
-###Assumptions, to be set by researcher
+### Load packages
+```{r, message = FALSE, warning = FALSE}
+#Assumed they are already installed
+library(matchingR) #Package that matches up agents in stable pairs
+library(ineq) #Package that allows to display inequality (currently not used)
+library(rmarkdown) #Package that allows to export R code to Word
+library(ggplot2) #Package for rendering graphs
+library(dplyr) #Package to allow quick filtering
+```
+
+### Assumptions to be set by researcher
+Sets network size, gender distribution, preference structure, experiment iterations and random distribution variables
+```{r, message = FALSE, warning = FALSE}
 #Network size
 nmen <- 50
 nwomen <- 50
@@ -14,10 +23,15 @@ nwomen <- 50
 prefIndependent <- 1
 prefCollective <- 1
 prefHomolog <- 1
-#Nr of experiments
-repetitions <- 200
+#Repetitions of experiments
+repetitions <- 199
+#Variables for random distribution
+mn <- 1000
+sd <- 200
+```
 
-#Automatically set parameters
+### Automatically set parameters
+```{r, message = FALSE, warning = FALSE}
 seed = 1
 seedMin=seed
 seedMax=seed+repetitions
@@ -26,15 +40,22 @@ sumPref=prefIndependent+prefCollective+prefHomolog
 wI=prefIndependent/sumPref
 wC=prefCollective/sumPref
 wH=prefHomolog/sumPref
-RLIST=list() #SAVE ALL THE MATRIX ON A LIST TO CALCULTE AT THE END SOME VALUES LIKE MEAN, SD,..
+RLIST=list() #Saves all matrices on a list to calculate average values at the end, like mean, sd, ...
 fo_avg_W=c()
 mo_avg_W=c()
 fo_avg_M=c()
 mo_avg_M=c()
-mn <- 1000
-sd <- 200
+```
 
-###Define preferences
+### Define Function that generates preferences
+Each agent has independent, correlated or intercorrelated preferences for each agent of the other gender. The mix of these has been defined by the researcher in above code chunk. This model works with cardinal preferences, which allows not only to see who is preferred, but also by how much.
+
+- independent/subjective: Each preference is generated randomly and has no correlation to any other preference. It can be phrased as: "Beauty lies in the eyes of the beholder"
+
+- correlated/objective/horizontal: Perfectly correlated preferences indicate that all agents agree on a score. In this model, correlated preferenced are created through the average of all individually created preferences. A real life example is a unanimously valid beauty standard
+
+- intercorrelated/homolog/vertical: Certain characteristics attract agents to each other, for example a low distance, a preferable age/height/height constellation, or common interests
+```{r, message = FALSE, warning = FALSE}
 generatePreferences <- function(nmen, nwomen, mn, sd, wI, wC, wH) {
   #generate individual cardinal preference matrices
   iUm <- matrix(rnorm(nmen*nwomen, mn, sd), nrow=nwomen, ncol=nmen) #independent pref. by men for women
@@ -68,9 +89,17 @@ generatePreferences <- function(nmen, nwomen, mn, sd, wI, wC, wH) {
   names(preferences) = c("swiperID", "targetID", "utility")
   return(preferences)
 }
+```
 
-### 1x Experiment = "create two-sided network with preferences, match up in pairs, examine results"
-### Run and repeat experiment x times, each time with new random preferences
+### Run Experiment for x iterations
+- Each experiment creates a new dating network
+- Each network is two-sided and consists of n men and m women
+- Each agent has random preferences for each agent of the other gender
+- The preference structure is defined in the assumptions. Preferences can be independent, correlated or inter-correlated
+  + The Deferred Acceptance Algorithm (DAA) solves the Stable Marriage Problem and matches up all agents in stable pairs
+  + The DAA runs in two variants, which result in both the female-optimal (=male-pessimal) and the male-optimal (=female-pessimal) stable matching
+  + If both results coincide, only one stable matching exists, which is optimal (and pessimal) for both genders
+```{r, message = FALSE, warning = FALSE}
 for (i in seedMin:seedMax){
   #set seed
   set.seed(i)
@@ -108,21 +137,20 @@ for (i in seedMin:seedMax){
   #resultsUtility = matrix(c(min(resultsWW, na.rm = TRUE), uWWav, max(resultsWW, na.rm = TRUE), min(resultsWM, na.rm = TRUE), uWMav, max(resultsWM, na.rm = TRUE), min(resultsMW, na.rm = TRUE), uMWav, max(resultsMW, na.rm = TRUE), min(resultsMM, na.rm = TRUE), uMMav, max(resultsMM, na.rm = TRUE), rep(round(100*ineq(wealthW,type="Gini"),digits=0),3), rep(round(100*ineq(wealthM,type="Gini"), digits = 0),3)), nrow = 6, ncol = 3)
   resultsPercentile = matrix(c(pnorm(min(resultsWW, na.rm = TRUE),mean=mn,sd=sd), pnorm(uWWav,mean=mn,sd=sd), pnorm(max(resultsWW, na.rm = TRUE),mean=mn,sd=sd), pnorm(min(resultsWM, na.rm = TRUE),mean=mn,sd=sd), pnorm(uWMav,mean=mn,sd=sd), pnorm(max(resultsWM, na.rm = TRUE),mean=mn,sd=sd), pnorm(min(resultsMW, na.rm = TRUE),mean=mn,sd=sd), pnorm(uMWav,mean=mn,sd=sd), pnorm(max(resultsMW, na.rm = TRUE),mean=mn,sd=sd), pnorm(min(resultsMM, na.rm = TRUE),mean=mn,sd=sd), pnorm(uMMav,mean=mn,sd=sd), pnorm(max(resultsMM, na.rm = TRUE),mean=mn,sd=sd), rep(ineq(wealthW,type="Gini"),3), rep(ineq(wealthM,type="Gini"),3)), nrow = 6, ncol = 3)
   rownames(resultsPercentile) = c("fo min", "fo avg", "fo max", "mo min", "mo avg", "mo max")
-  colnames(resultsPercentile) = c("Match Percentil for Women", "Match Percentil for Men", "Gini Coefficient")
+  colnames(resultsPercentile) = c("Match Percentile for Women", "Match Percentile for Men", "Gini Coeff.")
   
-  #Print results
-  print(i)
-  #print(resultsPercentile)
   fo_avg_W=c(fo_avg_W,resultsPercentile[2,1])
   fo_avg_M=c(fo_avg_M,resultsPercentile[2,2])
-  
   mo_avg_W=c(mo_avg_W,resultsPercentile[5,1])
   mo_avg_M=c(mo_avg_M,resultsPercentile[5,2])
   RLIST[[i]]=resultsPercentile
-  
 }
+```
 
-#Average Value after x repititions
+###Results
+Summarizes all x iterations and builds average of the aggregate utility over all experiment iterations. Aggregate Utility for each gender is displayed as percentile. The higher the percentile, the better. 
+Example: On average, women liked their allocated match better than 75% of the other men if their percentile = 0.75
+```{r, message = FALSE, warning = FALSE}
 arr=array(unlist(RLIST),c(6,3,repetitions+1))
 
 AVERAGE=apply(arr , 1:2 , mean )
@@ -134,15 +162,15 @@ SD=apply(arr , 1:2 , sd)
 row.names(SD)=row.names(resultsPercentile)
 colnames(SD)=colnames(resultsPercentile)
 SD
+```
 
-
+### Prepare for Graphs
+```{r, message = FALSE, warning = FALSE}
 #TOPLOT
 DF=data.frame(avg=c(fo_avg_W,fo_avg_M,mo_avg_W,mo_avg_M),
               algorithm=c(rep("female-optimal",2*(repetitions+1)),rep("male-optimal",2*(repetitions+1))),
               sex=c(rep("women",repetitions+1),
                     rep("men",repetitions+1),rep("women",repetitions+1),rep("men",repetitions+1)))
-
-#ggplot(data = DF, mapping = aes(x = algorithm, y = avg,fill=sex)) + stat_boxplot(geom ='errorbar') + geom_boxplot()
 
 #Construct 2 violin graphs
 data_summary <- function(x) {
@@ -151,8 +179,24 @@ data_summary <- function(x) {
   ymax <- m+sd(x)
   return(c(y=m,ymin=ymin,ymax=ymax))
 }
+```
 
-#Violin Chart (Across all experiment iterations, what was the average utility and its variety for each gender)
+### Density Chart
+Within each iteration, was utility distributed fairly across agents in both genders? Was this result stable across iterations?
+```{r, message = FALSE, warning = FALSE, dpi=300}
+ggplot(data = DF, aes(x = avg)) + 
+  geom_density(data = filter(DF, algorithm == "female-optimal" & sex == "men"), fill = "#2595FF", color = NA, alpha = 0.3) +
+  geom_density(data = filter(DF, algorithm == "male-optimal" & sex == "men"), fill = "#2595FF", color = NA, alpha = 0.1) +
+  #geom_density(data = filter(DF, algorithm == "female-optimal" & sex == "women"), fill = "#FE18AC", color = NA, alpha = 0.1) +
+  #geom_density(data = filter(DF, algorithm == "male-optimal" & sex == "women"), fill = "#FE18AC", color = NA, alpha = 0.1) +
+  xlab("Percentile per Agent") + ylab("Frequency") + #Add axis
+  labs(title = paste("Utility Distribution per Matching")) +
+  theme(plot.title = element_text(face="bold", size=16, hjust=0)) #format title
+```
+
+### Violin Chart
+Across all experiment iterations, what was the aggregate utility for each gender, and how did it vary between iterations?
+```{r, message = FALSE, warning = FALSE, dpi=300}
 ggplot(data = DF, mapping = aes(x= sex, y = avg, fill = sex)) + 
   geom_violin(data = filter(DF, algorithm == "male-optimal"), alpha = .5) + #filter for male-optimal version of the algorithm
   geom_violin(data = filter(DF, algorithm == "female-optimal"), alpha = .5) + #filter for female-optimal version of the algorithm
@@ -165,16 +209,4 @@ ggplot(data = DF, mapping = aes(x= sex, y = avg, fill = sex)) +
   theme(plot.title = element_text(face="bold", size=16, hjust=0)) + #format title
   ylim(low=0, high=1) + #fix y limit to 0, 1 for better comparability
   theme(legend.position="none") #remove legend
-
-#Desnity Chart (Across all iterations, how was utility distribution for each gender?)
-ggplot(data = DF, aes(x = avg)) + 
-  geom_density(data = filter(DF, algorithm == "female-optimal" & sex == "men"), fill = "#2595FF", color = NA, alpha = 0.3) +
-  geom_density(data = filter(DF, algorithm == "male-optimal" & sex == "men"), fill = "#2595FF", color = NA, alpha = 0.1) +
-  #geom_density(data = filter(DF, algorithm == "female-optimal" & sex == "women"), fill = "#FE18AC", color = NA, alpha = 0.1) +
-  #geom_density(data = filter(DF, algorithm == "male-optimal" & sex == "women"), fill = "#FE18AC", color = NA, alpha = 0.1) +
-  xlab("Percentile per Agent") + ylab("Frequency") + #Add axis
-  labs(title = paste("Utility Distribution per Matching")) +
-  theme(plot.title = element_text(face="bold", size=16, hjust=0)) #format title
-
-### Export to MS Word
-# render("Model GS.R", word_document())
+```
