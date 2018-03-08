@@ -8,8 +8,8 @@ library(dplyr)
 
 ###Assumptions, to be set by researcher
 #Network size
-nmen <- 500
-nwomen <- 500
+nmen <- 50
+nwomen <- 50
 #Preferences
 prefIndependent <- 1
 prefCollective <- 1
@@ -138,7 +138,7 @@ SD
 
 #TOPLOT
 DF=data.frame(avg=c(fo_avg_W,fo_avg_M,mo_avg_W,mo_avg_M),
-              algorithm=c(rep("female-optimal",6*(repetitions+1)),rep("male-optimal",6*(repetitions+1))),
+              algorithm=c(rep("female-optimal",2*(repetitions+1)),rep("male-optimal",2*(repetitions+1))),
               sex=c(rep("women",repetitions+1),
                     rep("men",repetitions+1),rep("women",repetitions+1),rep("men",repetitions+1)))
 
@@ -152,6 +152,7 @@ data_summary <- function(x) {
   return(c(y=m,ymin=ymin,ymax=ymax))
 }
 
+#Violin Chart (Across all experiment iterations, what was the average utility and its variety for each gender)
 ggplot(data = DF, mapping = aes(x= sex, y = avg, fill = sex)) + 
   geom_violin(data = filter(DF, algorithm == "male-optimal"), alpha = .5) + #filter for male-optimal version of the algorithm
   geom_violin(data = filter(DF, algorithm == "female-optimal"), alpha = .5) + #filter for female-optimal version of the algorithm
@@ -164,6 +165,16 @@ ggplot(data = DF, mapping = aes(x= sex, y = avg, fill = sex)) +
   theme(plot.title = element_text(face="bold", size=16, hjust=0)) + #format title
   ylim(low=0, high=1) + #fix y limit to 0, 1 for better comparability
   theme(legend.position="none") #remove legend
+
+#Desnity Chart (Across all iterations, how was utility distribution for each gender?)
+ggplot(data = DF, aes(x = avg)) + 
+  geom_density(data = filter(DF, algorithm == "female-optimal" & sex == "men"), fill = "#2595FF", color = NA, alpha = 0.3) +
+  #geom_density(data = filter(DF, algorithm == "male-optimal" & sex == "men"), fill = "#2595FF", color = NA, alpha = 0.1) +
+  geom_density(data = filter(DF, algorithm == "female-optimal" & sex == "women"), fill = "#FE18AC", color = NA, alpha = 0.1) +
+  #geom_density(data = filter(DF, algorithm == "male-optimal" & sex == "women"), fill = "#FE18AC", color = NA, alpha = 0.1) +
+  xlab("Percentile per Agent") + ylab("Frequency") + #Add axis
+  labs(title = paste("Utility Distribution per Matching")) +
+  theme(plot.title = element_text(face="bold", size=16, hjust=0)) #format title
 
 ### Export to MS Word
 # render("Model GS.R", word_document())
