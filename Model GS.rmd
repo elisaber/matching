@@ -147,7 +147,7 @@ for (i in seedMin:seedMax){
 }
 ```
 
-###Results
+### Results
 Summarizes all x iterations and builds average of the aggregate utility over all experiment iterations. Aggregate Utility for each gender is displayed as percentile. The higher the percentile, the better. 
 Example: On average, women liked their allocated match better than 75% of the other men if their percentile = 0.75
 ```{r, message = FALSE, warning = FALSE}
