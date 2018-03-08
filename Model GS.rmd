@@ -4,8 +4,8 @@ output: word_document
 Github repository: <https://github.com/bredowmax/matching>
 
 ### Load packages
+Install packages if not done already
 ```{r, message = FALSE, warning = FALSE}
-#Assumed they are already installed
 library(matchingR) #Package that matches up agents in stable pairs
 library(ineq) #Package that allows to display inequality (currently not used)
 library(rmarkdown) #Package that allows to export R code to Word
