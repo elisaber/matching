@@ -26,12 +26,12 @@ Sets network size, gender distribution, preference structure, experiment iterati
 
 - *intercorrelated/homolog/vertical*: Certain characteristics attract agents to each other, for example a low distance, a preferable age/height/height constellation, or common interests
 ```{r, message = FALSE, warning = FALSE}
-nmen <- 60 #number of men
-nwomen <- 40 #number of women
+nmen <- 6 #number of men
+nwomen <- 4 #number of women
 prefIndependent <- 1 #weight of subjective/independent preferences
 prefCollective <- 1 #weight of collective/correlated preferences
 prefHomolog <- 1 #weight of homolog/intercorrelated preferences
-repetitions <- 1 #how many times the experiment is repeated with new set of random preferences
+repetitions <- 2 #how many times the experiment is repeated with new set of random preferences
 mn <- 6.3 #average preference
 sd <- 1.9 #standard deviation
 ```
@@ -115,8 +115,10 @@ for (i in seedMin:seedMax){
   galeShapley.checkStability(uW, uM, resultsW$proposals, resultsW$engagements)
   #calculate average utility of each matched agent
   resultsWW <<- diag(uW[resultsW$proposals,1:nwomen])
+  resultsWW[is.na(resultsWW)] <- 0 #this sets utility = 0 in case of no match
   uWWav <<- mean(resultsWW, na.rm=TRUE)
   resultsMW <<- diag(uM[resultsW$engagements,1:nmen])
+  resultsMW[is.na(resultsMW)] <- 0
   uMWav <<- mean(resultsMW, na.rm=TRUE)
   
   #male-optimal matching
@@ -124,8 +126,10 @@ for (i in seedMin:seedMax){
   check <- galeShapley.checkStability(uM, uW, resultsM$proposals, resultsM$engagements)
   #calculate average utility of each matched agent
   resultsWM <<- diag(uW[resultsM$engagements,1:nwomen])
+  resultsMW[is.na(resultsMW)] <- 0
   uWMav <<- mean(resultsWM, na.rm=TRUE)
   resultsMM <<- diag(uM[resultsM$proposals,1:nmen])
+  resultsMM[is.na(resultsMM)] <- 0
   uMMav <<- mean(resultsMM, na.rm=TRUE)
   
   #Create results
