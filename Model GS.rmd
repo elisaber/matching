@@ -26,14 +26,14 @@ Sets network size, gender distribution, preference structure, experiment iterati
 
 - *intercorrelated/homolog/vertical*: Certain characteristics attract agents to each other, for example a low distance, a preferable age/height/height constellation, or common interests
 ```{r, message = FALSE, warning = FALSE}
-nmen <- 50 #number of men
-nwomen <- 50 #number of women
+nmen <- 60 #number of men
+nwomen <- 40 #number of women
 prefIndependent <- 1 #weight of subjective/independent preferences
 prefCollective <- 1 #weight of collective/correlated preferences
 prefHomolog <- 1 #weight of homolog/intercorrelated preferences
-repetitions <- 199 #how many times the experiment is repeated with new set of random preferences
-mn <- 5.5 #average preference
-sd <- 1.25 #standard deviation
+repetitions <- 1 #how many times the experiment is repeated with new set of random preferences
+mn <- 6.3 #average preference
+sd <- 1.9 #standard deviation
 ```
 
 ### Automatically set parameters
@@ -48,6 +48,8 @@ wI=prefIndependent/sumPref
 wC=prefCollective/sumPref
 wH=prefHomolog/sumPref
 RLIST=list() #Saves all matrices on a list to calculate average values at the end, like mean, sd, ...
+WealthMenEachIteration=list()
+WealthWomenEachIteration=list()
 fo_avg_W=c()
 mo_avg_W=c()
 fo_avg_M=c()
@@ -145,6 +147,8 @@ for (i in seedMin:seedMax){
   mo_avg_W=c(mo_avg_W,resultsPercentile[5,1])
   mo_avg_M=c(mo_avg_M,resultsPercentile[5,2])
   RLIST[[i]]=resultsPercentile
+  WealthMenEachIteration[[i]]=wealthM
+  WealthWomenEachIteration[[i]]=wealthW
 }
 ```
 
@@ -152,6 +156,8 @@ for (i in seedMin:seedMax){
 Summarizes all x iterations and builds average of the aggregate utility over all experiment iterations. Aggregate Utility for each gender is displayed as percentile. The higher the percentile, the better. 
 Example: On average, women liked their allocated match better than 75% of the other men if their percentile = 0.75
 ```{r, message = FALSE, warning = FALSE}
+WealthMenAcrossExperiments=array(unlist(WealthMenEachIteration),c(nmen,2,repetitions+1))
+WealthWomenAcrossExperiments=array(unlist(WealthWomenEachIteration),c(nwomen,2,repetitions+1))
 arr=array(unlist(RLIST),c(6,3,repetitions+1))
 
 AVERAGE=apply(arr , 1:2 , mean )
