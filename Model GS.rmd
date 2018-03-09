@@ -48,8 +48,10 @@ wI=prefIndependent/sumPref
 wC=prefCollective/sumPref
 wH=prefHomolog/sumPref
 RLIST=list() #Saves all matrices on a list to calculate average values at the end, like mean, sd, ...
-WealthMenEachIteration=list()
-WealthWomenEachIteration=list()
+utilityMenMO=c()
+utilityMenFO=c()
+utilityWomenMO=c()
+utilityWomenFO=c()
 fo_avg_W=c()
 mo_avg_W=c()
 fo_avg_M=c()
@@ -111,7 +113,7 @@ for (i in seedMin:seedMax){
   preferences=generatePreferences(nmen, nwomen, mn, sd, wI, wC, wH)
   
   #female-optimal matching
-  resultsW <<- galeShapley.marriageMarket(uW, uM) 
+  resultsW <- galeShapley.marriageMarket(uW, uM) 
   galeShapley.checkStability(uW, uM, resultsW$proposals, resultsW$engagements)
   #calculate average utility of each matched agent
   resultsWW <<- diag(uW[resultsW$proposals,1:nwomen])
@@ -123,7 +125,7 @@ for (i in seedMin:seedMax){
   
   #male-optimal matching
   resultsM <- galeShapley.marriageMarket(uM, uW) 
-  check <- galeShapley.checkStability(uM, uW, resultsM$proposals, resultsM$engagements)
+  galeShapley.checkStability(uM, uW, resultsM$proposals, resultsM$engagements)
   #calculate average utility of each matched agent
   resultsWM <<- diag(uW[resultsM$engagements,1:nwomen])
   resultsMW[is.na(resultsMW)] <- 0
@@ -151,8 +153,10 @@ for (i in seedMin:seedMax){
   mo_avg_W=c(mo_avg_W,resultsPercentile[5,1])
   mo_avg_M=c(mo_avg_M,resultsPercentile[5,2])
   RLIST[[i]]=resultsPercentile
-  WealthMenEachIteration[[i]]=wealthM
-  WealthWomenEachIteration[[i]]=wealthW
+  utilityMenFO[[i]]=resultsMW
+  utilityMenMO[[i]]=resultsMM
+  utilityWomenFO[[i]]=resultsWW
+  utilityWomenMO[[i]]=resultsWM
 }
 ```
 
@@ -160,8 +164,6 @@ for (i in seedMin:seedMax){
 Summarizes all x iterations and builds average of the aggregate utility over all experiment iterations. Aggregate Utility for each gender is displayed as percentile. The higher the percentile, the better. 
 Example: On average, women liked their allocated match better than 75% of the other men if their percentile = 0.75
 ```{r, message = FALSE, warning = FALSE}
-WealthMenAcrossExperiments=array(unlist(WealthMenEachIteration),c(nmen,2,repetitions+1))
-WealthWomenAcrossExperiments=array(unlist(WealthWomenEachIteration),c(nwomen,2,repetitions+1))
 arr=array(unlist(RLIST),c(6,3,repetitions+1))
 
 AVERAGE=apply(arr , 1:2 , mean )
@@ -178,6 +180,11 @@ SD
 ### Prepare for Graphs
 ```{r, message = FALSE, warning = FALSE}
 #TOPLOT
+dfWomenFO <- data.frame(matrix(unlist(utilityWomenFO), nrow=nwomen, byrow=T))
+#dfWomenMO  <- data.frame(matrix(unlist(utilityWomenMO), nrow=nwomen, byrow=T))
+dfMenFO <- data.frame(matrix(unlist(utilityMenFO), nrow=nmen, byrow=T))
+#dfMenMO <- data.frame(matrix(unlist(utilityMenMO), nrow=nmen, byrow=T))
+
 DF=data.frame(avg=c(fo_avg_W,fo_avg_M,mo_avg_W,mo_avg_M),
               algorithm=c(rep("female-optimal",2*(repetitions+1)),rep("male-optimal",2*(repetitions+1))),
               sex=c(rep("women",repetitions+1),
