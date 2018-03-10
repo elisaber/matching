@@ -211,6 +211,21 @@ ggplot(data = DF, aes(x = avg)) +
   labs(title = paste("Utility Distribution per Matching")) +
   theme(plot.title = element_text(face="bold", size=16, hjust=0)) #format title
 ```
+```{r, message = FALSE, warning = FALSE, dpi=300}
+dfMenFO$id=1:nrow(dfMenFO)
+library(reshape2)
+dfPlot=melt(dfMenFO, id.vars="id")
+ggplot(data = dfPlot, aes(x =value,fill=variable)) + 
+  geom_density(alpha=0.1,show.legend = F)
+
+```
+```{r, message = FALSE, warning = FALSE, dpi=300}
+dfWomenFO$id=1:nrow(dfWomenFO)
+library(reshape2)
+dfPlot=melt(dfWomenFO, id.vars="id")
+ggplot(data = dfPlot, aes(x =value,fill=variable)) + 
+  geom_density(alpha=0.1,show.legend = F)
+```
 
 ### Violin Chart
 Across all experiment iterations, what was the aggregate utility for each gender, and how did it vary between iterations?
