@@ -212,6 +212,46 @@ ggplot(data = DF, aes(x = avg)) +
   theme(plot.title = element_text(face="bold", size=16, hjust=0)) #format title
 ```
 ```{r, message = FALSE, warning = FALSE, dpi=300}
+x=c()
+y=c()
+id=1:nrow(dfWomenFO)
+for (i in 1:ncol(dfWomenFO))
+{
+  x=cbind(x,density(dfWomenFO[,i])$x)
+  y=cbind(y,density(dfWomenFO[,i])$y)
+}
+x=melt(x)
+names(x)[3]="x"
+y=melt(y)
+names(y)[3]="y"
+W=left_join(x,y)
+
+x=c()
+y=c()
+id=1:nrow(dfMenFO)
+for (i in 1:ncol(dfMenFO))
+{
+  x=cbind(x,density(dfMenFO[,i])$x)
+  y=cbind(y,density(dfMenFO[,i])$y)
+}
+x=melt(x)
+names(x)[3]="xm"
+y=melt(y)
+names(y)[3]="ym"
+y$ym=-1*y$ym
+M=left_join(x,y)
+names(M)[1]="Var1_m"
+
+ggplot(data = W, aes(x=x,y=y,group=Var1)) + 
+  geom_line(show.legend=FALSE)+
+  geom_line(data=M,aes(x=xm,y=ym,group=Var1_m))  +
+  #geom_area(aes(fill = "#FE18AC"))+
+  xlab("Matching Quality per Woman") + ylab("Frequency") + #Add axis
+  labs(title = paste("Match Utility per Agent"), caption = paste(repetitions, " iterations"), subtitle = (paste("Set size = ", setSize," || men/women (in %) = ", nmen/setSize*100, ":", nwomen/setSize*100, "\nPreference structure individual/collective/homolog (in %) = ", round(wI*100), "/", round(wC * 100), "/", round(wH * 100), sep = ""))) + #add title
+  theme(plot.title = element_text(face="bold", size=16, hjust=0))+coord_flip() #format title
+```
+
+```{r, message = FALSE, warning = FALSE, dpi=300}
 dfMenFO$id=1:nrow(dfMenFO)
 library(reshape2)
 dfPlot=melt(dfMenFO, id.vars="id")
