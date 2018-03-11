@@ -10,7 +10,7 @@ Github repository: <https://github.com/bredowmax/matching>
 - rmarkdown: Export R code to Word
 - ineq: Package that allows to display inequality
 ```{r, message = FALSE, warning = FALSE}
-requiredPackages = c("matchingR", "dplyr", "ggplot2", "rmarkdown", "ineq")
+requiredPackages = c("matchingR", "dplyr", "ggplot2", "rmarkdown", "ineq","reshape")
 for(p in requiredPackages){
   if(!require(p,character.only = TRUE)) install.packages(p)
   library(p,character.only = TRUE)
@@ -225,6 +225,7 @@ names(x)[3]="x"
 y=melt(y)
 names(y)[3]="y"
 W=left_join(x,y)
+names(W)[1]="Var1"
 
 x=c()
 y=c()
@@ -249,11 +250,10 @@ ggplot(data = W, aes(x=x,y=y,group=Var1)) +
   xlab("Matching Quality per Woman") + ylab("Frequency") + #Add axis
   labs(title = paste("Match Utility per Agent"), caption = paste(repetitions, " iterations"), subtitle = (paste("Set size = ", setSize," || men/women (in %) = ", nmen/setSize*100, ":", nwomen/setSize*100, "\nPreference structure individual/collective/homolog (in %) = ", round(wI*100), "/", round(wC * 100), "/", round(wH * 100), sep = ""))) + #add title
   theme(plot.title = element_text(face="bold", size=16, hjust=0))+coord_flip() #format title
-```
+ ```
 
 ```{r, message = FALSE, warning = FALSE, dpi=300}
 dfMenFO$id=1:nrow(dfMenFO)
-library(reshape2)
 dfPlot=melt(dfMenFO, id.vars="id")
 ggplot(data = dfPlot, aes(x=value, fill=variable)) + 
   geom_density(alpha=0.1,show.legend=FALSE, colour=NA) +
