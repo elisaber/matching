@@ -10,7 +10,7 @@ Github repository: <https://github.com/bredowmax/matching>
 - rmarkdown: Export R code to Word
 - ineq: Package that allows to display inequality
 ```{r, message = FALSE, warning = FALSE}
-requiredPackages = c("matchingR", "dplyr", "ggplot2", "rmarkdown", "ineq")
+requiredPackages = c("matchingR", "dplyr", "ggplot2", "rmarkdown", "ineq", "reshape2", "ggthemes", "cowplot", "grid")
 for(p in requiredPackages){
   if(!require(p,character.only = TRUE)) install.packages(p)
   library(p,character.only = TRUE)
@@ -26,8 +26,8 @@ Sets network size, gender distribution, preference structure, experiment iterati
 
 - *intercorrelated/homolog/vertical*: Certain characteristics attract agents to each other, for example a low distance, a preferable age/height/height constellation, or common interests
 ```{r, message = FALSE, warning = FALSE}
-nmen <- 500 #number of men
-nwomen <- 500 #number of women
+nmen <- 50 #number of men
+nwomen <- 50 #number of women
 prefIndependent <- 1 #weight of subjective/independent preferences
 prefCollective <- 1 #weight of collective/correlated preferences
 prefHomolog <- 1 #weight of homolog/intercorrelated preferences
@@ -52,6 +52,10 @@ utilityMenMO=c()
 utilityMenFO=c()
 utilityWomenMO=c()
 utilityWomenFO=c()
+percentileWomenFO=c()
+percentileMenFO=c()
+percentileWomenMO=c()
+percentileMenMO=c()
 fo_avg_W=c()
 mo_avg_W=c()
 fo_avg_M=c()
@@ -136,10 +140,14 @@ for (i in seedMin:seedMax){
   
   #Create results
   #Gini Coefficient female-optimal
-  wealthW = c(pnorm(resultsWW,mean=mn,sd=sd), pnorm(resultsMW,mean=mn,sd=sd))
+  percWW = pnorm(resultsWW,mean=mn,sd=sd)
+  percMW = pnorm(resultsMW,mean=mn,sd=sd)
+  wealthW = c(percWW, percMW)
   wealthW[is.na(wealthW)] <- 0
   #Gini Coefficient male-optimal
-  wealthM = c(pnorm(resultsMM,mean=mn,sd=sd), pnorm(resultsWM,mean=mn,sd=sd))
+  percMM = pnorm(resultsMM,mean=mn,sd=sd)
+  percWM = pnorm(resultsWM,mean=mn,sd=sd)
+  wealthM = c(percMM, percWM)
   wealthM[is.na(wealthM)] <- 0
   
   #Define result matrix
@@ -157,6 +165,10 @@ for (i in seedMin:seedMax){
   utilityMenMO[[i]]=resultsMM
   utilityWomenFO[[i]]=resultsWW
   utilityWomenMO[[i]]=resultsWM
+  percentileWomenFO[[i]]=percWW
+  percentileMenFO[[i]]=percMW
+  percentileWomenMO[[i]]=percWM
+  percentileMenMO[[i]]=percMM
 }
 ```
 
@@ -185,6 +197,12 @@ dfWomenFO <- data.frame(matrix(unlist(utilityWomenFO), nrow=nwomen, byrow=T))
 dfMenFO <- data.frame(matrix(unlist(utilityMenFO), nrow=nmen, byrow=T))
 #dfMenMO <- data.frame(matrix(unlist(utilityMenMO), nrow=nmen, byrow=T))
 
+#dfWomenFO <- data.frame(matrix(unlist(percentileWomenFO), nrow=nwomen, byrow=T))
+#dfWomenMO  <- data.frame(matrix(unlist(percentileWomenMO), nrow=nwomen, byrow=T))
+#dfMenFO <- data.frame(matrix(unlist(percentileMenFO), nrow=nmen, byrow=T))
+#dfMenMO <- data.frame(matrix(unlist(percentileMenMO), nrow=nmen, byrow=T))
+
+
 DF=data.frame(avg=c(fo_avg_W,fo_avg_M,mo_avg_W,mo_avg_M),
               algorithm=c(rep("female-optimal",2*(repetitions+1)),rep("male-optimal",2*(repetitions+1))),
               sex=c(rep("women",repetitions+1),
@@ -209,30 +227,47 @@ ggplot(data = DF, aes(x = avg)) +
   #geom_density(data = filter(DF, algorithm == "male-optimal" & sex == "women"), fill = "#FE18AC", color = NA, alpha = 0.3) +
   xlab("Percentile per Agent") + ylab("Frequency") + #Add axis
   labs(title = paste("Utility Distribution per Matching")) +
-  theme(plot.title = element_text(face="bold", size=16, hjust=0)) #format title
+  theme(plot.title = element_text(face="bold", size=16, hjust=0)) + #format title
+  theme_economist_white()
 ```
+
+
+
 ```{r, message = FALSE, warning = FALSE, dpi=300}
 dfMenFO$id=1:nrow(dfMenFO)
-library(reshape2)
 dfPlot=melt(dfMenFO, id.vars="id")
-ggplot(data = dfPlot, aes(x=value, fill=variable)) + 
-  geom_density(alpha=0.1,show.legend=FALSE, colour=NA) +
+plotMen <- ggplot(data = dfPlot, aes(x=value, fill=variable)) + 
+  geom_vline(data=dfPlot, aes(xintercept=uMWav), linetype="solid", size=1) +
+  geom_density(alpha=0.01,show.legend=FALSE, colour=NA) +
   scale_fill_manual(values = rep("#2595FF", each=repetitions+1)) +
-  xlab("Matching Quality per Man") + ylab("Frequency") + #Add axis
-  labs(title = paste("Match Utility per Agent"), caption = paste(repetitions, " iterations"), subtitle = (paste("Set size = ", setSize," || men/women (in %) = ", nmen/setSize*100, ":", nwomen/setSize*100, "\nPreference structure individual/collective/homolog (in %) = ", round(wI*100), "/", round(wC * 100), "/", round(wH * 100), sep = ""))) + #add title
-  theme(plot.title = element_text(face="bold", size=16, hjust=0)) #format title
+  labs(title = paste("Men's Matching Satisfaction"), caption = paste(repetitions, " iterations"), subtitle = (paste("Set size = ", setSize," || men/women (in %) = ", nmen/setSize*100, ":", nwomen/setSize*100, "\nPreference structure individual/collective/homolog (in %) = ", round(wI*100), "/", round(wC * 100), "/", round(wH * 100), sep = ""))) + #add title
+  #theme(plot.title = element_text(face="bold", size=16, hjust=0)) + #format title
+  theme_economist_white() +
+  coord_flip() +
+  theme(axis.title.y=element_blank(), axis.title.x=element_blank()) +
+  ylim(low=1, high=0) +
+  xlim(low=4, high=11) #use this if using utility
+  #xlim(low=0, high=1)
 
-```
-```{r, message = FALSE, warning = FALSE, dpi=300}
 dfWomenFO$id=1:nrow(dfWomenFO)
-library(reshape2)
 dfPlot=melt(dfWomenFO, id.vars="id")
-ggplot(data = dfPlot, aes(x=value, fill=variable)) + 
-  geom_density(alpha=0.1,show.legend=FALSE, colour=NA) +
+plotWomen <- ggplot(data = dfPlot, aes(x=value, fill=variable)) + 
+  geom_vline(data=dfPlot, aes(xintercept=uWWav), linetype="solid", size=1) +
+  geom_density(alpha=0.01,show.legend=FALSE, colour=NA) +
   scale_fill_manual(values = rep("#FE18AC", each=repetitions+1)) +
-  xlab("Matching Quality per Woman") + ylab("Frequency") + #Add axis
-  labs(title = paste("Match Utility per Agent"), caption = paste(repetitions, " iterations"), subtitle = (paste("Set size = ", setSize," || men/women (in %) = ", nmen/setSize*100, ":", nwomen/setSize*100, "\nPreference structure individual/collective/homolog (in %) = ", round(wI*100), "/", round(wC * 100), "/", round(wH * 100), sep = ""))) + #add title
-  theme(plot.title = element_text(face="bold", size=16, hjust=0)) #format title
+  labs(title = paste("Women's Matching Satisfaction"), caption = paste(repetitions, " iterations"), subtitle = (paste("Set size = ", setSize," || men/women (in %) = ", nmen/setSize*100, ":", nwomen/setSize*100, "\nPreference structure individual/collective/homolog (in %) = ", round(wI*100), "/", round(wC * 100), "/", round(wH * 100), sep = ""))) + #add title
+  theme_economist_white() +
+  coord_flip() +
+  theme(axis.title.y=element_blank(), axis.title.x=element_blank()) +
+  ylim(low=0, high=1) +
+  xlim(low=4, high=11)
+  #xlim(low=0, high=1)
+#plotMen
+#plotMen
+plot_grid(plotMen,plotWomen)
+
+#grid.newpage()
+#grid.draw(cbind(ggplotGrob(plotMen), ggplotGrob(plotWomen), size = "last"))
 ```
 
 ### Violin Chart
@@ -249,5 +284,6 @@ ggplot(data = DF, mapping = aes(x= sex, y = avg, fill = sex)) +
   labs(title = paste("Average Utility by Gender"), caption = paste(repetitions, " iterations"), subtitle = (paste("Set size = ", setSize," || men/women (in %) = ", nmen/setSize*100, ":", nwomen/setSize*100, "\nPreference structure individual/collective/homolog (in %) = ", round(wI*100), "/", round(wC * 100), "/", round(wH * 100), sep = ""))) + #add title
   theme(plot.title = element_text(face="bold", size=16, hjust=0)) + #format title
   ylim(low=0, high=1) + #fix y limit to 0, 1 for better comparability
-  theme(legend.position="none") #remove legend
+  theme(legend.position="none") + #remove legend
+  theme_economist_white()
 ```
