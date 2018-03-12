@@ -240,13 +240,14 @@ plotMen <- ggplot(data = dfPlot, aes(x=value, fill=variable)) +
   geom_vline(data=dfPlot, aes(xintercept=uMWav), linetype="solid", size=1) +
   geom_density(alpha=0.01,show.legend=FALSE, colour=NA) +
   scale_fill_manual(values = rep("#2595FF", each=repetitions+1)) +
-  labs(title = paste("Men's Matching Satisfaction"), caption = paste(repetitions, " iterations"), subtitle = (paste("Set size = ", setSize," || men/women (in %) = ", nmen/setSize*100, ":", nwomen/setSize*100, "\nPreference structure individual/collective/homolog (in %) = ", round(wI*100), "/", round(wC * 100), "/", round(wH * 100), sep = ""))) + #add title
+  labs(caption = paste(repetitions, " iterations")) + #add title
   #theme(plot.title = element_text(face="bold", size=16, hjust=0)) + #format title
   theme_economist_white() +
   coord_flip() +
   theme(axis.title.y=element_blank(), axis.title.x=element_blank()) +
   ylim(low=1, high=0) +
-  xlim(low=4, high=11) #use this if using utility
+  xlim(low=4, high=11)+
+  theme(plot.margin = unit(c(0, 0, 0, 0), "cm"))#use this if using utility
   #xlim(low=0, high=1)
 
 dfWomenFO$id=1:nrow(dfWomenFO)
@@ -255,16 +256,24 @@ plotWomen <- ggplot(data = dfPlot, aes(x=value, fill=variable)) +
   geom_vline(data=dfPlot, aes(xintercept=uWWav), linetype="solid", size=1) +
   geom_density(alpha=0.01,show.legend=FALSE, colour=NA) +
   scale_fill_manual(values = rep("#FE18AC", each=repetitions+1)) +
-  labs(title = paste("Women's Matching Satisfaction"), caption = paste(repetitions, " iterations"), subtitle = (paste("Set size = ", setSize," || men/women (in %) = ", nmen/setSize*100, ":", nwomen/setSize*100, "\nPreference structure individual/collective/homolog (in %) = ", round(wI*100), "/", round(wC * 100), "/", round(wH * 100), sep = ""))) + #add title
+  labs(caption = paste(repetitions, " iterations") ) + #add title
   theme_economist_white() +
   coord_flip() +
   theme(axis.title.y=element_blank(), axis.title.x=element_blank()) +
   ylim(low=0, high=1) +
-  xlim(low=4, high=11)
+  xlim(low=4, high=11)+
+  theme(plot.margin = unit(c(0, 0, 0, 0), "cm"))
   #xlim(low=0, high=1)
 #plotMen
 #plotMen
-plot_grid(plotMen,plotWomen)
+p=plot_grid(plotMen,plotWomen)
+
+title <- ggdraw() + draw_label("Matching Satisfaction", fontface='bold')
+                               
+sub=ggdraw()+draw_label(paste("Set size = ", setSize," || men/women (in %) = ", nmen/setSize*100, ":", nwomen/setSize*100, "\nPreference structure individual/collective/homolog (in %) = ", round(wI*100), "/", round(wC * 100), "/", round(wH * 100), sep = ""),size=10)
+
+p1=plot_grid(sub,p,ncol=1,rel_heights=c(0.1, 1))
+plot_grid(title, p1, ncol=1, rel_heights=c(0.1, 1)) 
 
 #grid.newpage()
 #grid.draw(cbind(ggplotGrob(plotMen), ggplotGrob(plotWomen), size = "last"))
